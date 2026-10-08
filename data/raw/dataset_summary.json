@@ -1,0 +1,70 @@
+{
+  "rows": 49653,
+  "columns": 18,
+  "unique_employees": 6284,
+  "years": [
+    "2006",
+    "2007",
+    "2008",
+    "2009",
+    "2010",
+    "2011",
+    "2012",
+    "2013",
+    "2014",
+    "2015"
+  ],
+  "status_counts": {
+    "ACTIVE": 48168,
+    "TERMINATED": 1485
+  },
+  "termination_reasons": {
+    "Retirement": 885,
+    "Resignaton": 385,
+    "Layoff": 215
+  },
+  "unique_terminated_employees": 1485,
+  "departments": 21,
+  "empty_values": {
+    "EmployeeID": 0,
+    "recorddate_key": 0,
+    "birthdate_key": 0,
+    "orighiredate_key": 0,
+    "terminationdate_key": 0,
+    "age": 0,
+    "length_of_service": 0,
+    "city_name": 0,
+    "department_name": 0,
+    "job_title": 0,
+    "store_name": 0,
+    "gender_short": 0,
+    "gender_full": 0,
+    "termreason_desc": 0,
+    "termtype_desc": 0,
+    "STATUS_YEAR": 0,
+    "STATUS": 0,
+    "BUSINESS_UNIT": 0
+  },
+  "duplicate_employee_year_pairs": 5,
+  "fields": [
+    "EmployeeID",
+    "recorddate_key",
+    "birthdate_key",
+    "orighiredate_key",
+    "terminationdate_key",
+    "age",
+    "length_of_service",
+    "city_name",
+    "department_name",
+    "job_title",
+    "store_name",
+    "gender_short",
+    "gender_full",
+    "termreason_desc",
+    "termtype_desc",
+    "STATUS_YEAR",
+    "STATUS",
+    "BUSINESS_UNIT"
+  ],
+  "sha256": "4fd731772cce98a2fdc96ceb3fff6628e9b95d14d8d701ffe51e9c24c763a450"
+}
