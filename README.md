@@ -1,8 +1,10 @@
-# Kalan & Giden
+# Mercek
+
+Güncel kapsam ve tasarım: [Proje bağlamı](PROJE_BAGLAMI.md) · [Kapsam ve renk paleti PDF’si](docs/kalan_giden_proje_kapsami_ve_renkler.pdf).
 
 Çalışan ayrılmalarını yıl, departman, mağaza ve kayıtlı ayrılma sebebine göre inceleyen veri analizi ve raporlama projesi.
 
-**Durum:** Veri analizi, SAP tarzı kaynak tablolar ve DuckDB veri ambarı hazır. FastAPI ile temel veri sorguları ve React ekranında toplam çalışan, ayrılan çalışan ve yıllık ayrılma listesi çalışıyor. Arayüz geliştirmesi sürüyor. Ayrılma tahmini ve yapay zekâ bu sürümün kapsamında değil.
+**Durum:** Veri analizi, SAP tarzı kaynak tablolar ve DuckDB veri ambarı hazır. FastAPI ve React ile Nabız, Veda defteri ve Karşılaştırmalar sayfaları yerelde çalışıyor. Tarih ve grup filtreleri, etiketli grafikler, CSV indirme ve açık/koyu tema mevcut. Ayrılma tahmini ve yapay zekâ bu sürümün kapsamında değil.
 
 ## Veri
 
@@ -15,7 +17,7 @@ Kaynak: [AIHR Employee Churn tutorial](https://www.aihr.com/blog/tutorial-people
 ## Mevcut akış
 
 ```text
-Ham CSV → temiz veri → SAP tarzı CSV tabloları → DuckDB veri ambarı → SQL analizleri
+Ham CSV → temiz veri → SAP tarzı CSV tabloları → DuckDB veri ambarı → FastAPI → React
 ```
 
 Notebook'ları şu sırayla inceleyin:
@@ -44,15 +46,14 @@ Hazırlanmış dosyalar `data/processed/` içinde; ambar `warehouse.duckdb` dosy
 
 ## Web uygulaması ve sonraki adımlar
 
-FastAPI ve React ile üç sayfa planlanıyor:
+PDF’nin pitaya renk paleti ve tek sütun düzeniyle üç sayfa oluşturuldu:
 
 - **Nabız:** Genel sayılar ve yıllık/departman bazında özetler.
-- **Veda defteri:** Tarih aralığı, mağaza ve departmana göre ayrılan çalışan listesi.
-- **Mercek:** Ayrılma sebepleri, mağazalar, şehirler ve diğer kırılımlar.
+- **Veda defteri:** Yıl, tarih aralığı, mağaza, şehir, departman ve sebep filtreleri; çalışan numarası arama, sayfalama ve filtreli CSV indirme.
+- **Karşılaştırmalar:** Departman, mağaza, şehir, cinsiyet ve kıdem gruplarını kişi sayısı veya ayrılma yüzdesiyle karşılaştırma.
 
-“2014'te kaç kişi ayrıldı?” gibi hazır sorular ve filtreler kayıtlı veriden SQL ile cevaplanacak. Yerel başlangıç arayüzü hazır; üç sayfalı uygulama henüz tamamlanmadı veya yayımlanmadı.
+Yıl grafiğindeki bir nokta veya altındaki yıl bağlantısı ilgili yılın kayıtlarını, sebep satırındaki ok ilgili sebebin kayıtlarını açar. Filtreler kayıtlı veriden parametreli SQL ile hesaplanır. Serbest doğal dil sorgusu ve tahmin yoktur. Uygulama yereldir; yayımlanmamıştır.
 
-Kapsam ve çalışma kuralları: [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
 
 
 ## API ve arayüzü yerelde çalıştırma
@@ -60,7 +61,7 @@ Kapsam ve çalışma kuralları: [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
 Proje ana klasöründeki terminalde:
 
 ```powershell
-python -m pip install fastapi uvicorn duckdb
+python -m pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
@@ -73,3 +74,32 @@ npm run dev
 ```
 
 API: `http://127.0.0.1:8000`. API test ekranı: `http://127.0.0.1:8000/docs`. Arayüz: `http://localhost:5173` (terminalde gösterilen adresi kontrol edin). Geliştirme CORS izni localhost ve 127.0.0.1 için 5173 portuna tanımlı. İki sunucu da açık kalmalıdır.
+
+
+## Arayüz ve ölçümler
+
+- Açık/koyu tema sistem tercihine uyar. Grafik değerleri doğrudan etiketlidir.
+- Nabız özetleri tüm veri dönemine aittir; 6.284 benzersiz çalışan, 1.485 ayrılma ve %23,63 dönem payı. Bu yıllık devir oranı değildir.
+- Karşılaştırmalar sayfasında her çalışan seçilen yılın veya tüm dönemin son kaydıyla bir kez gruplandırılır. Kıdem bu kayda aittir. Yıl seçilirse payda o yılda gözlenen benzersiz çalışanlardır; yıl başı/sonu ortalama personel hesabı kullanılmaz.
+- Mağaza analizlerinde yalnızca STORES birimi kullanılır. Şehir yazımları korunmuştur.
+- CSV, listede seçilen filtreler ve çalışan numarası aramasına uyan bütün sonuçları indirir; sadece görünen sayfayı indirmez.
+- `/api/departures` yıl gönderilmezse bütün dönemi getirir. Opsiyonel parametreler: `year`, `department`, `store`, `city`, `reason`, `start_date`, `end_date`.
+- Vite geliştirme sunucusu `/api` isteklerini `127.0.0.1:8000` adresine iletir. API farklı adreste çalışırsa arayüzde `VITE_API_URL` ayarlanabilir; ilgili CORS izni de güncellenmelidir.
+
+Derleme: `cd frontend` ardından `npm run build`. Canlı yayın ve Docker henüz hazırlanmadı.
+
+## Ekran görüntüleri
+
+- [Nabız](docs/screenshots/nabiz.png)
+- [Yıllık alan grafiği ve tablosu](docs/screenshots/yillik-alan-grafigi.png)
+- [Veda defteri](docs/screenshots/veda-defteri.png)
+- [Karşılaştırmalar](docs/screenshots/mercek.png)
+
+Yerel kontroller: API toplamları ve filtreleri kaynak CSV ile karşılaştırıldı. Gerçek tarayıcıda yıl grafiğinden geçiş, filtreler, CSV indirme, sayfalama, boş sonuç, açık/koyu tema, API hata/yeniden deneme ve 320 piksel ekran genişliği kontrol edildi. React üretim derlemesi başarılı.
+
+
+### Yıllık alan grafiği
+
+Nabız'daki alan grafiği başlangıçta yıllık ayrılma payını gösterir. “Oran (%) / Ayrılan kişi” seçimi grafiğin ölçüsünü değiştirir. Aynı anda farklı ölçekte iki dolu alan çizilmez. Nokta ayrıntıları toplam çalışanı, ayrılanı ve yüzdeyi birlikte gösterir; grafik altındaki tabloda on yılın bütün değerleri kalıcı olarak görünür.
+
+`GET /api/by-year` her yıl için `yil`, `toplam_calisan`, `ayrilan_calisan`, `ayrilma_yuzdesi` döndürür. Payda, o yıl herhangi bir kaydı bulunan benzersiz çalışanlardır; yıllık satır toplamı kullanılmaz. Ayrılmalar gerçek ayrılma tarihinin yılına göre sayılır. Bu, yıl başı/sonu ortalama çalışanla hesaplanan devir oranı değildir.
