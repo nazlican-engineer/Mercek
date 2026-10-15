@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
+from datetime import date
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 import duckdb
 
 # API uygulamasını oluşturuyoruz.
-app = FastAPI()
+app = FastAPI(title="Mercek", description="2006–2015 sentetik çalışan verisinin geçmiş ayrılma analizi.")
 # React arayüzünün API'ye erişmesine izin veriyoruz.
 app.add_middleware(
     CORSMiddleware,
@@ -19,14 +20,7 @@ app.add_middleware(
 # API'nin çalışıp çalışmadığını kontrol ediyoruz.
 @app.get("/")
 def home():
-    return {"mesaj": "Kalan & Giden API çalışıyor"}
-
-# Veritabanının konumunu belirliyoruz.
-DB_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data/processed/warehouse.duckdb"
-)
-
+    return {"mesaj": "Mercek API çalışıyor"}
 
 # Veritabanının konumunu belirliyoruz.
 DB_PATH = (
@@ -66,27 +60,39 @@ def departure_count():
     finally:
         con.close()
 
-# Gerçek ayrılma tarihine göre yıllık ayrılma sayılarını getiriyoruz.
+# Her yılın benzersiz çalışanlarını ve gerçek ayrılmalarını birlikte getiriyoruz.
 @app.get("/api/by-year")
 def departures_by_year():
     con = duckdb.connect(str(DB_PATH), read_only=True)
 
     try:
         rows = con.execute("""
-            SELECT
-                YEAR(termination_date) AS yil,
-                COUNT(*) AS ayrilan_calisan
-            FROM fact_employee_year
-            WHERE left_flag = 1
-            GROUP BY YEAR(termination_date)
-            ORDER BY yil
+            WITH employees AS (
+                SELECT status_year AS year,
+                    COUNT(DISTINCT employee_key) AS total
+                FROM fact_employee_year
+                GROUP BY status_year
+            ), departures AS (
+                SELECT YEAR(termination_date) AS year,
+                    COUNT(DISTINCT employee_key) AS total
+                FROM fact_employee_year
+                WHERE left_flag = 1
+                GROUP BY YEAR(termination_date)
+            )
+            SELECT e.year, e.total, COALESCE(d.total, 0),
+                ROUND(100.0 * COALESCE(d.total, 0) / e.total, 2)
+            FROM employees AS e
+            LEFT JOIN departures AS d ON e.year = d.year
+            ORDER BY e.year
         """).fetchall()
 
         results = []
         for row in rows:
             results.append({
                 "yil": row[0],
-                "ayrilan_calisan": row[1]
+                "toplam_calisan": row[1],
+                "ayrilan_calisan": row[2],
+                "ayrilma_yuzdesi": row[3],
             })
 
         return results
@@ -153,7 +159,35 @@ def departures_by_department():
 
 # İstenen yılda ayrılan çalışanları listeliyoruz.
 @app.get("/api/departures")
-def departures(year: int = 2014):
+def departures(
+    year: int | None = Query(None, ge=2006, le=2015),
+    department: str | None = None,
+    store: int | None = None,
+    city: str | None = None,
+    reason: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+):
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(status_code=422, detail="Başlangıç tarihi bitişten sonra olamaz.")
+
+    # Filtre değerlerini SQL metnine eklemiyoruz; parametre olarak gönderiyoruz.
+    conditions = ["f.left_flag = 1"]
+    parameters = []
+    filters = [
+        (year, "YEAR(f.termination_date) = ?"),
+        (department, "d.department_name = ?"),
+        (store, "s.store_code = ? AND s.business_unit = 'STORES'"),
+        (city, "s.city_name = ?"),
+        (reason, "t.termination_reason = ?"),
+        (start_date, "f.termination_date >= ?"),
+        (end_date, "f.termination_date <= ?"),
+    ]
+    for value, condition in filters:
+        if value is not None:
+            conditions.append(condition)
+            parameters.append(value)
+
     con = duckdb.connect(str(DB_PATH), read_only=True)
 
     try:
@@ -161,23 +195,37 @@ def departures(year: int = 2014):
             SELECT
                 e.employee_id,
                 f.termination_date,
-                t.termination_reason
+                t.termination_reason,
+                d.department_name,
+                j.job_title,
+                s.store_code,
+                s.city_name,
+                s.business_unit,
+                f.length_of_service
             FROM fact_employee_year AS f
             JOIN dim_employee AS e
                 ON f.employee_key = e.employee_key
             JOIN dim_termination AS t
                 ON f.termination_key = t.termination_key
-            WHERE f.left_flag = 1
-              AND YEAR(f.termination_date) =?
+            JOIN dim_department AS d ON f.department_key = d.department_key
+            JOIN dim_job AS j ON f.job_key = j.job_key
+            JOIN dim_store AS s ON f.store_key = s.store_key
+            WHERE """ + " AND ".join(conditions) + """
             ORDER BY f.termination_date, e.employee_id
-        """, [year]).fetchall()
+        """, parameters).fetchall()
 
         results = []
         for row in rows:
             results.append({
                 "calisan_no": row[0],
                 "ayrilma_tarihi": row[1],
-                "sebep": row[2]
+                "sebep": row[2],
+                "departman": row[3],
+                "gorev": row[4],
+                "magaza_no": row[5],
+                "sehir": row[6],
+                "is_birimi": row[7],
+                "kidem": row[8],
             })
 
         return results
@@ -211,6 +259,89 @@ def departures_by_store():
             })
 
         return results
+    finally:
+        con.close()
+
+
+# Ana sayfadaki sayılar yalnızca veri dönemi için hesaplanıyor.
+@app.get("/api/summary")
+def summary():
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        row = con.execute("""
+            SELECT COUNT(DISTINCT employee_key),
+                COUNT(DISTINCT CASE WHEN left_flag = 1 THEN employee_key END),
+                MIN(status_year), MAX(status_year)
+            FROM fact_employee_year
+        """).fetchone()
+        return {"toplam_calisan": row[0], "ayrilan_calisan": row[1],
+                "ayrilma_kaydi_olmayan": row[0] - row[1],
+                "ilk_yil": row[2], "son_yil": row[3],
+                "ayrilma_yuzdesi": round(100 * row[1] / row[0], 2)}
+    finally:
+        con.close()
+
+
+# Açılır listeler için veride bulunan seçenekleri getiriyoruz.
+@app.get("/api/filters")
+def filter_options():
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        departments = con.execute("SELECT department_name FROM dim_department ORDER BY department_name").fetchall()
+        stores = con.execute("""
+            SELECT DISTINCT store_code, city_name FROM dim_store
+            WHERE business_unit = 'STORES' ORDER BY store_code
+        """).fetchall()
+        cities = con.execute("SELECT DISTINCT city_name FROM dim_store ORDER BY city_name").fetchall()
+        return {"yillar": list(range(2006, 2016)),
+                "departmanlar": [row[0] for row in departments],
+                "sehirler": [row[0] for row in cities],
+                "magazalar": [{"kod": row[0], "sehir": row[1]} for row in stores]}
+    finally:
+        con.close()
+
+
+# Grupları her çalışanın dönemdeki son kaydına göre karşılaştırıyoruz.
+@app.get("/api/breakdown")
+def breakdown(
+    group_by: str = "department",
+    year: int | None = Query(None, ge=2006, le=2015),
+):
+    groups = {
+        "department": "d.department_name",
+        "store": "'Mağaza ' || CAST(s.store_code AS VARCHAR) || ' · ' || s.city_name",
+        "city": "s.city_name",
+        "gender": "CASE WHEN e.gender_code = 1 THEN 'Erkek' WHEN e.gender_code = 2 THEN 'Kadın' ELSE 'Belirtilmemiş' END",
+        "tenure": "CASE WHEN f.length_of_service <= 2 THEN '0–2 yıl' WHEN f.length_of_service <= 5 THEN '3–5 yıl' WHEN f.length_of_service <= 10 THEN '6–10 yıl' WHEN f.length_of_service <= 15 THEN '11–15 yıl' ELSE '16+ yıl' END",
+    }
+    if group_by not in groups:
+        raise HTTPException(status_code=422, detail="Geçersiz karşılaştırma grubu.")
+
+    period_filter = "WHERE status_year = ?" if year is not None else ""
+    store_filter = "WHERE s.business_unit = 'STORES'" if group_by == "store" else ""
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        rows = con.execute("""
+            WITH latest AS (
+                SELECT * FROM fact_employee_year
+                """ + period_filter + """
+                QUALIFY ROW_NUMBER() OVER (
+                    PARTITION BY employee_key
+                    ORDER BY status_year DESC, left_flag DESC, record_date DESC
+                ) = 1
+            )
+            SELECT """ + groups[group_by] + """ AS label,
+                COUNT(*) AS total, SUM(f.left_flag) AS departures,
+                ROUND(100.0 * SUM(f.left_flag) / COUNT(*), 2) AS rate
+            FROM latest AS f
+            JOIN dim_employee AS e ON f.employee_key = e.employee_key
+            JOIN dim_department AS d ON f.department_key = d.department_key
+            JOIN dim_store AS s ON f.store_key = s.store_key
+            """ + store_filter + """
+            GROUP BY label ORDER BY departures DESC, label
+        """, [year] if year is not None else []).fetchall()
+        return [{"grup": row[0], "toplam_calisan": row[1],
+                 "ayrilan_calisan": row[2], "ayrilma_yuzdesi": row[3]} for row in rows]
     finally:
         con.close()
 
