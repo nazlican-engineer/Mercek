@@ -2,7 +2,7 @@
 
 Çalışan ayrılmalarını yıl, departman, mağaza ve kayıtlı ayrılma sebebine göre inceleyen veri analizi ve raporlama projesi.
 
-**Durum:** Veri analizi, SAP tarzı kaynak tablolar ve DuckDB veri ambarı hazır. Web arayüzü ve API sonraki aşama. Ayrılma tahmini ve yapay zekâ bu sürümün kapsamında değil.
+**Durum:** Veri analizi, SAP tarzı kaynak tablolar ve DuckDB veri ambarı hazır. FastAPI ile temel veri sorguları ve React ekranında toplam çalışan, ayrılan çalışan ve yıllık ayrılma listesi çalışıyor. Arayüz geliştirmesi sürüyor. Ayrılma tahmini ve yapay zekâ bu sürümün kapsamında değil.
 
 ## Veri
 
@@ -42,7 +42,7 @@ python -m notebook --notebook-dir=notebooks
 
 Hazırlanmış dosyalar `data/processed/` içinde; ambar `warehouse.duckdb` dosyasıdır. Ambar notebook'undaki `CREATE TABLE IF NOT EXISTS`, mevcut tabloları yeniden yüklemez. Kaynak veriler değişirse mevcut ambarın yenilenmesi ayrıca ele alınmalıdır.
 
-## Web sitesi planı
+## Web uygulaması ve sonraki adımlar
 
 FastAPI ve React ile üç sayfa planlanıyor:
 
@@ -50,6 +50,26 @@ FastAPI ve React ile üç sayfa planlanıyor:
 - **Veda defteri:** Tarih aralığı, mağaza ve departmana göre ayrılan çalışan listesi.
 - **Mercek:** Ayrılma sebepleri, mağazalar, şehirler ve diğer kırılımlar.
 
-“2014'te kaç kişi ayrıldı?” gibi hazır sorular ve filtreler kayıtlı veriden SQL ile cevaplanacak. Web sitesi henüz geliştirilmedi veya yayımlanmadı.
+“2014'te kaç kişi ayrıldı?” gibi hazır sorular ve filtreler kayıtlı veriden SQL ile cevaplanacak. Yerel başlangıç arayüzü hazır; üç sayfalı uygulama henüz tamamlanmadı veya yayımlanmadı.
 
 Kapsam ve çalışma kuralları: [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
+
+
+## API ve arayüzü yerelde çalıştırma
+
+Proje ana klasöründeki terminalde:
+
+```powershell
+python -m pip install fastapi uvicorn duckdb
+python -m uvicorn backend.main:app --reload
+```
+
+Ayrı bir terminalde:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+API: `http://127.0.0.1:8000`. API test ekranı: `http://127.0.0.1:8000/docs`. Arayüz: `http://localhost:5173` (terminalde gösterilen adresi kontrol edin). Geliştirme CORS izni localhost ve 127.0.0.1 için 5173 portuna tanımlı. İki sunucu da açık kalmalıdır.
