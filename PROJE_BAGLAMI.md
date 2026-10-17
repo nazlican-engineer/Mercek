@@ -80,3 +80,25 @@ Kullanıcının isteğiyle Nabız’daki yıllık çubuklar alan grafiğine çev
 ## Grafik ağırlıklı pano güncellemesi
 
 Nabız’da altı grafik bulunur: yıllık alan, yıllık sebep bazında yığılmış sütun, sebeplerin halka grafiği, departman çubukları, ilk 10 mağaza ve ayrılma anındaki kıdem dağılımı. Ortak yıl filtresi özet sayıları ve son dört grafiği günceller. İlk iki grafik on yıllık bağlamı korur; yığılmış grafikte seçilen yıl vurgulanır. Sebep yüzdelerinin paydası seçilen dönemde ayrılanlar, departman paylarının paydası ilgili gruptaki benzersiz çalışanlardır. Mağazalar yalnızca STORES birimidir. Yığılmış grafiğin tam değerleri açılır tabloda, diğer grafiklerin değerleri doğrudan görünür.
+
+
+## Sayfa düzeni güncellemesi
+
+Departman ve ilk 10 mağaza grafikleri Nabız’dan Karşılaştırmalar sayfasına taşındı. İkisi de bu sayfanın dönem filtresine uyar. Nabız’da dört grafik bulunur: yıllık eğilim, yıllık ayrılma sebepleri, sebep dağılımı ve ayrılma anındaki kıdem. Karşılaştırmalar sayfasındaki ayrıntılı grup seçimi ve kişi/yüzde analizi korunur.
+
+
+Son düzenleme: Ayrı ilk 10 mağaza grafiği kaldırıldı. Mağaza analizi Karşılaştırmalar sayfasındaki Mağaza seçeneğinden yapılır; kişi sayısı/yüzde ve tüm grupları gösterme seçenekleri korunur.
+
+
+Karşılaştırmalar sayfasındaki tekrarlayan “Hangi departmanlarda?” bölümü kaldırıldı. Departman ve mağaza dahil tüm grup analizleri, üstteki grup seçimiyle değişen tek grafik alanında sunulur.
+
+
+## Mercek Veri Asistanı
+
+Bütün sayfalarda sağ alttaki pembe ikonla açılan sohbet paneli bulunur. Konuşma sayfa değişince ve panel kapatılıp açılınca korunur; sayfa yenilenince sıfırlanır. `GET /api/assistant?question=...` sorgusu `backend/assistant.py` içindeki hazır soru eşleştirmesini kullanır. Model veya dış yapay zekâ servisi kullanılmaz.
+
+Desteklenen soru türleri: ayrılma sayısı, çalışan listesi (mağaza/şehir/departman/kıdem dahil), ayrılma sebepleri, departman/mağaza/şehir sıralaması, yılların karşılaştırılması ve tek çalışan ayrılma kaydı. Yıl, açık tarih aralığı, aynı yıl içindeki ay aralığı, tek departman, tek şehir, mağaza numarası, ayrılma sebebi ve en fazla tam yıl kıdemi birlikte filtrelenebilir. Şehir ve departman adları verideki adlarla eşleştirilir; şehir yazım farkları birleştirilmez.
+
+Örnekler panelden seçilebilir. Sonuçta uygulanan filtreler açıkça gösterilir. Çalışan listelerinde merkez ofis mağaza diye etiketlenmez; mağaza sıralamalarında yalnızca STORES vardır. Tablolarda ilk 10 satır görünür, diğer satırlar 25’er eklenebilir. Tahmin, oran, cinsiyet filtresi ve belirsiz/uyumsuz sorularda kapsam açıklanır. Bu eşleştirme her serbest cümleyi anlayan bir dil modeli değildir.
+
+Kontrol: `python -m unittest discover -s tests -v`. Testler temiz CSV ile birleşik filtreleri, tarihleri, mağaza ayrımını, sıralamaları ve alternatif soru ifadelerini karşılaştırır.

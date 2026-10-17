@@ -3,6 +3,7 @@ import { useApi } from './api'
 import Nabiz from './Nabiz'
 import VedaDefteri from './VedaDefteri'
 import Mercek from './Mercek'
+import DataAssistant from './DataAssistant'
 import './App.css'
 
 const pages = { nabiz: 'Nabız', 'veda-defteri': 'Veda defteri', mercek: 'Karşılaştırmalar' }
@@ -45,6 +46,7 @@ export default function App() {
         {page === 'nabiz' && <Nabiz summary={summary} openRecords={openRecords} />}
         {page === 'veda-defteri' && <VedaDefteri key={`${recordSelection.year}-${recordSelection.reason}`} options={options} initialYear={recordSelection.year} initialReason={recordSelection.reason} />}
         {page === 'mercek' && <Mercek />}
+        <DataAssistant openRecords={openRecords} />
         <details className="about-data"><summary>Bu veriler hakkında <span aria-hidden="true">+</span></summary><p>Bu uygulama, AIHR Employee Churn eğitimindeki kurgusal MFG10YearTerminationData verisini inceler. Gerçek çalışan bilgisi içermez. 2006–2015 dönemi kayıtları kullanılır; bugünkü çalışan durumunu veya gelecekteki ayrılmaları göstermez. SAP tarzı CSV tabloları ve DuckDB veri ambarı üzerine kuruludur; gerçek SAP bağlantısı yoktur.</p><a className="text-button" href="https://www.aihr.com/blog/tutorial-people-analytics-r-employee-churn/" target="_blank" rel="noreferrer">Veri kaynağını incele ↗</a></details>
       </main>
       <footer className="site-footer"><span>Mercek<span className="brand-dot">.</span></span><p>Geçmiş kayıtlardan, anlaşılır içgörülere.</p><span>Bir veri analizi projesi · 2006–2015</span></footer>

@@ -3,6 +3,7 @@ from datetime import date
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 import duckdb
+from backend.assistant import answer_question
 
 # API uygulamasını oluşturuyoruz.
 app = FastAPI(title="Mercek", description="2006–2015 sentetik çalışan verisinin geçmiş ayrılma analizi.")
@@ -345,3 +346,8 @@ def breakdown(
     finally:
         con.close()
 
+
+# Hazır soru türlerini ve verideki filtreleri eşleştiriyoruz.
+@app.get("/api/assistant")
+def assistant(question: str = Query(..., min_length=1, max_length=300)):
+    return answer_question(question, DB_PATH)
