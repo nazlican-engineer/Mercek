@@ -78,3 +78,28 @@
   .annual-table td { font-size: 11px; }
   .mobile-chart-hint { display: inline; }
 }
+
+/* Ortak dönem filtresi ve yan yana analiz grafikleri. */
+.dashboard-intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-block: 45px 35px; }
+.dashboard-intro h1 { font-size: clamp(36px, 4.3vw, 60px); letter-spacing: -2px; }
+.dashboard-filter { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 22px 0; border-top: 1px solid var(--line); }
+.dashboard-filter p { font-size: 16px; margin-top: 7px; }.dashboard-filter p span { color: var(--mut); font-size: 12px; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; margin-top: 30px; }
+.dashboard-panel { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 28px; background: var(--panel); }
+.dashboard-wide { grid-column: 1 / -1; }.dashboard-panel .section-heading { margin-bottom: 24px; }.dashboard-panel .section-heading h2 { font-size: 28px; }
+.dashboard-panel .annual-table-wrap { margin-top: 12px; max-height: 230px; overflow: auto; }
+.dashboard-panel .annual-table thead { position: sticky; top: 0; background: var(--panel); }
+.department-mode { width: fit-content; margin-bottom: 10px; }.dashboard-panel .bar-row { padding-block: 10px 12px; }.dashboard-panel .bar-description { gap: 10px; }
+.reason-legend { display: flex; gap: 22px; flex-wrap: wrap; color: var(--mut); font-size: 12px; margin-bottom: 16px; }
+.reason-legend span, .donut-legend button>span { display: flex; align-items: center; gap: 9px; }
+.reason-legend i, .donut-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.stacked-scroll { overflow-x: auto; }.stacked-chart { width: 100%; min-width: 650px; display: block; }
+.chart-data { margin-top: 12px; font-size: 12px; }.chart-data summary { cursor: pointer; color: var(--ac); padding: 8px 0; }.chart-data table { min-width: 450px; }
+.donut-layout { display: flex; flex-direction: column; align-items: center; gap: 16px; }.donut-chart { width: 240px; max-width: 100%; }.donut-total { font-family: Georgia,serif; font-size: 34px; fill: var(--tx); }
+.donut-legend { list-style: none; padding: 0; margin: 0; width: 100%; }.donut-legend li { border-bottom: 1px solid var(--line); }
+.donut-legend button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 15px 0; font-size: 13px; }.donut-legend button:hover { color: var(--ac); }
+.donut-legend strong { font-size: 21px; font-family: Georgia,serif; font-weight: 400; text-align: right; }.donut-legend small { display: block; font-family: 'Trebuchet MS',sans-serif; font-size: 11px; color: var(--mut); margin-top: 3px; }
+.tenure-chart { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; margin-top: 45px; }.tenure-column { text-align: center; font-size: 12px; }.tenure-track { height: 230px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--line); margin-bottom: 14px; padding-inline: 6px; }.tenure-track>span { background: var(--ac); display: block; position: relative; width: 100%; border-radius: 4px 4px 0 0; }.tenure-track b { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); font-weight: 400; font-size: 13px; }.tenure-column small { color: var(--mut); }
+.dashboard-note { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 24px; }.dashboard-note p { font-size: 12px; color: var(--mut); margin-top: 12px; }
+@media(max-width:900px) { .dashboard-grid { grid-template-columns: 1fr; }.dashboard-intro { align-items: flex-start; flex-direction: column; }.dashboard-wide { grid-column: auto; } }
+@media(max-width:640px) { .dashboard-panel { padding: 20px 16px; }.dashboard-grid { gap: 18px; }.dashboard-filter { flex-direction: column; align-items: stretch; gap: 16px; }.dashboard-filter .period-select { max-width: none; }.dashboard-intro h1 { font-size: clamp(32px, 8vw, 48px); }.dashboard-panel .section-heading h2 { font-size: 25px; }.tenure-chart { gap: 8px; }.tenure-track { padding-inline: 4px; height: 190px; }.reason-legend { gap: 12px; font-size: 10px; }.dashboard-panel .bar-description { flex-wrap: wrap; }.dashboard-panel .bar-description strong { font-size: 18px; } }
