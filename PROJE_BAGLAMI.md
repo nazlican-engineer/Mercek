@@ -33,7 +33,7 @@ Tahmin, risk yüzdesi, model eğitimi, SHAP ve serbest doğal dili SQL’e çevi
 
 ## Görsel tasarım
 
-Sade, editoryal, tek sütunlu, geniş boşluklu düzen. Kart, yan menü ve klasik pano düzeni kullanılmayacak. Sistem koyu tema tercihi desteklenecek.
+Kullanıcının son isteğiyle Nabız, grafik ağırlıklı bir analiz panosuna dönüştürüldü. Grafikler masaüstünde ikili, mobilde tek sütunlu panellerde gösterilir. Mercek markası ve pitaya renk paleti korunur. Sistem koyu tema tercihi desteklenecek.
 
 | Rol | Açık tema | Koyu tema |
 | --- | --- | --- |
@@ -76,3 +76,7 @@ Kullanıcıyla küçük adımlarla, açıklayarak ilerle. Kod sade, yorumlar kı
 ## Yıllık grafik güncellemesi
 
 Kullanıcının isteğiyle Nabız’daki yıllık çubuklar alan grafiğine çevrildi. Varsayılan ölçü, o yıl gözlenen benzersiz çalışanlar içindeki ayrılma payı; ikinci seçenek ayrılan kişi sayısı. Nokta ayrıntıları, klavyeyle kayıt listesine geçiş ve bütün yılları gösteren çalışan/ayrılma/yüzde tablosu mevcut. Payda yıllık benzersiz çalışan sayısıdır; beş tekrar kaydı iki kez sayılmaz. Bu gösterim standart yıllık devir oranı olarak adlandırılmaz.
+
+## Grafik ağırlıklı pano güncellemesi
+
+Nabız’da altı grafik bulunur: yıllık alan, yıllık sebep bazında yığılmış sütun, sebeplerin halka grafiği, departman çubukları, ilk 10 mağaza ve ayrılma anındaki kıdem dağılımı. Ortak yıl filtresi özet sayıları ve son dört grafiği günceller. İlk iki grafik on yıllık bağlamı korur; yığılmış grafikte seçilen yıl vurgulanır. Sebep yüzdelerinin paydası seçilen dönemde ayrılanlar, departman paylarının paydası ilgili gruptaki benzersiz çalışanlardır. Mağazalar yalnızca STORES birimidir. Yığılmış grafiğin tam değerleri açılır tabloda, diğer grafiklerin değerleri doğrudan görünür.

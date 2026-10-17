@@ -103,3 +103,9 @@ Yerel kontroller: API toplamları ve filtreleri kaynak CSV ile karşılaştırı
 Nabız'daki alan grafiği başlangıçta yıllık ayrılma payını gösterir. “Oran (%) / Ayrılan kişi” seçimi grafiğin ölçüsünü değiştirir. Aynı anda farklı ölçekte iki dolu alan çizilmez. Nokta ayrıntıları toplam çalışanı, ayrılanı ve yüzdeyi birlikte gösterir; grafik altındaki tabloda on yılın bütün değerleri kalıcı olarak görünür.
 
 `GET /api/by-year` her yıl için `yil`, `toplam_calisan`, `ayrilan_calisan`, `ayrilma_yuzdesi` döndürür. Payda, o yıl herhangi bir kaydı bulunan benzersiz çalışanlardır; yıllık satır toplamı kullanılmaz. Ayrılmalar gerçek ayrılma tarihinin yılına göre sayılır. Bu, yıl başı/sonu ortalama çalışanla hesaplanan devir oranı değildir.
+
+### Grafik ağırlıklı analiz panosu
+
+Nabız altı grafik içerir: yıllık alan, yıllara göre ayrılma sebepleri (yığılmış sütun), sebep dağılımı (halka), departmanlar, ilk 10 mağaza ve ayrılma anındaki kıdem. Ortak yıl filtresi özet sayıları ve dönem grafiklerini günceller; iki yıllık eğilim grafiği bütün yılları korur. Departmanlar kişi sayısı veya ayrılma payına göre sıralanabilir. Halka grafiğin sebep satırları filtreli kayıt listesini açar. Mağaza grafiği merkez ofisi dışarıda bırakır. Yeni grafikler `/api/departures`, `/api/by-year` ve `/api/breakdown` verilerini kullanır; ek grafik kütüphanesi kurulmadı.
+
+[Güncel Nabız panosu](docs/screenshots/nabiz.png) · [Koyu tema](docs/screenshots/pano-koyu.png).
