@@ -1,10 +1,17 @@
 # Mercek — Çalışan Ayrılma Analizi
 
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-336791?style=flat&logoColor=white)
+![DuckDB](https://img.shields.io/badge/DuckDB-FFF000?style=flat&logo=duckdb&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+
 **Ham çalışan kayıtlarından, sorgulanabilir bir veri ambarına ve etkileşimli bir analiz uygulamasına.**
 
 Mercek; çalışanların **ne zaman, hangi departmandan, hangi mağazadan ve hangi kayıtlı sebeple ayrıldığını** incelemek için geliştirdiğim bir veri analizi projesi. Çalışma, veriyi tanıma ve temizleme ile başladı; SAP tarzı kaynak tablolar, DuckDB veri ambarı, FastAPI ve React arayüzüyle tamamlandı.
-
-**Python · Pandas · SQL · DuckDB · FastAPI · React · Vite**
 
 > Veri seti sentetiktir. Uygulama geçmiş kayıtları inceler; gerçek çalışanlar hakkında bilgi veya geleceğe yönelik ayrılma tahmini sunmaz. Web uygulaması yerelde çalışır. Docker Compose ile yerel çalışma doğrulandı; canlı yayın henüz yapılmadı.
 
