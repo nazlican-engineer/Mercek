@@ -1,5 +1,6 @@
 # Backend derlemesine yalnızca gerekli dosyaları gönderiyoruz.
 **
+!requirements.txt
 !backend/
 !backend/**
 !data/

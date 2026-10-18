@@ -1,21 +1,32 @@
-# Veri kaynağı
+# Data source
 
-İndirme tarihi: 8 Ekim 2026.
+Downloaded on October 8, 2026.
 
-Kaynak: Lyndon Sundmark, AIHR Employee Churn tutorial.
-https://www.aihr.com/blog/tutorial-people-analytics-r-employee-churn/
+**Source:** Lyndon Sundmark, [AIHR — Employee Churn tutorial](https://www.aihr.com/blog/tutorial-people-analytics-r-employee-churn/).
 
-İndirilen arşiv:
-https://www.aihr.com/wp-content/uploads/2016/09/Datasets-Tutorial-People-Analytics.zip
+**Original archive:** [Datasets — Tutorial People Analytics](https://www.aihr.com/wp-content/uploads/2016/09/Datasets-Tutorial-People-Analytics.zip).
 
-Arşivden `MFG10YearTerminationData.csv` çıkarıldı. Ham CSV değiştirilmedi. Veri tamamen kurgusaldır (sentetik); gerçek şirket çalışanları değildir. Lisans koşulları ayrıca doğrulanmadı.
+`MFG10YearTerminationData.csv` was extracted from the archive. The raw CSV was left unchanged. The dataset is entirely synthetic and does not describe real company employees. Its licensing terms have not been independently verified.
 
-Ham veri: 49.653 satır, 18 sütun, 6.284 benzersiz çalışan; 2006–2015. TERMINATED kayıtları: 1.485; emeklilik 885, istifa 385, işten çıkarılma 215. `Resignaton` kaynak dosyadaki yazımdır.
+## Dataset summary
 
-Aynı çalışan/yıl çiftinde beş fazla kayıt vardır. Aynı yıl ACTIVE ve TERMINATED kayıtları birlikte bulunduğu için kullanıcının kararıyla korundular. Dolayısıyla çalışan-yıl çifti tek başına benzersiz satır anahtarı değildir.
+The raw file contains 49,653 rows, 18 columns, and 6,284 unique employees over 2006–2015. There are 1,485 TERMINATED records: 885 retirements, 385 resignations, and 215 layoffs. `Resignaton` is the spelling used in the original file.
 
-Ham veride boş hücre yok; `1900-01-01` ve `Not Applicable` gibi işaret değerleri var. Temizlenmiş ayrı dosyada 1900-01-01 tarihleri boş değere çevrildi, tarih türleri düzenlendi ve Resignaton yazımı Resignation yapıldı. İki tarih tutarsızlığı işaretlendi. Şehir yazımları birleştirilmedi. Ham veri korunuyor.
+Five additional records share an employee–year combination with another record. Each pair contains both ACTIVE and TERMINATED statuses for the same year. Both records were retained, so employee and year alone do not form a unique row key.
 
-İsim, maaş, mesai ve memnuniyet alanları yok. ACTIVE kayıtlarında daha sonraki ayrılmaların bilgileri bulunabileceği için ayrılma sayıları gerçek TERMINATED olaylarından hesaplanır. Tarih filtresinde `recorddate_key` ile gerçek ayrılma tarihi karıştırılmamalıdır.
+## Cleaning decisions
 
-İlk veri kontrolünün sayıları ve dosya özeti: `dataset_summary.json`. Analiz bulguları ve uygulanan temizlik kararları proje README dosyasında açıklanır.
+The raw data has no missing cells, but it contains placeholder values such as `1900-01-01` and `Not Applicable`.
+
+In a separate cleaned file:
+
+- `1900-01-01` departure dates were converted to missing values.
+- Date columns were converted during preparation; CSV exports store dates as strings.
+- `Resignaton` was corrected to `Resignation`.
+- Two date conflicts were flagged without changing the underlying dates.
+- Alternative city spellings were retained rather than merged.
+- The raw dataset was preserved.
+
+The dataset does not include employee names, salaries, overtime, or satisfaction measures. Earlier ACTIVE records may contain information about a later departure, so departures are counted only from actual TERMINATED events. Date filters use the actual departure date, not `recorddate_key`.
+
+Initial validation figures and file metadata are available in [dataset_summary.json](dataset_summary.json). Analysis findings and implemented cleaning decisions are explained in the [project README](../../README.md).

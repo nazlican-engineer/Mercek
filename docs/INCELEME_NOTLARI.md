@@ -1,22 +1,25 @@
-# Mercek: sorgu, Docker, proxy ve arayüz incelemesi
+# Mercek: query, Docker, proxy, and frontend review
 
-18 Ekim 2026. Paylaşılan yapılacaklar dosyası `0/0` ve “incelenmeyi bekleyen dosyalar” satırından oluşuyordu; ayrıntılı eksik maddeleri yoktu. Aşağıdaki maddeler, belirtilen dosyaların doğrudan incelenmesiyle bulundu ve giderildi.
+Reviewed on October 18, 2026. The supplied checklist contained `0/0` and a list of files awaiting review, rather than detailed action items. The following issues were identified and addressed through direct inspection of those files.
 
-- [x] **Kıdem sınırı:** “İlk iki yıl” artık `kıdem < 2`; “en fazla 2 yıl” `kıdem <= 2`. İlk iki yılda istifa edenlerin sayısı 163.
-- [x] **Tarih sırası:** ISO ve gün/ay/yıl biçimleri birlikte yazıldığında sorudaki sıra korunuyor. Ters tarih ve yıl aralıkları açıklama isteğiyle karşılanıyor.
-- [x] **Mağaza toplamı:** Mağaza bazlı cevapta toplam ve satırların ikisi de yalnızca STORES birimini kapsıyor.
-- [x] **Sorgu güvenliği:** Asistan kullanıcı metnini SQL olarak çalıştırmıyor; sabit salt okunur sorguları kullanıyor. API filtre değerleri parametreli kalıyor. SQL benzeri metinlerin tabloyu değiştirmediği ve filtreyi genişletmediği kontrol edildi.
-- [x] **Docker yetkileri:** API zaten yönetici olmayan kullanıcıdaydı; Nginx de bu düzene geçirildi. İki serviste salt okunur dosya sistemi, tüm ek yetkilerin kaldırılması ve sonradan yetki kazanımının engellenmesi doğrulandı.
-- [x] **Proxy:** Docker DNS çözümlemesi ve bağlantı/yanıt süreleri tanımlandı. API yolları ve parametreleri korundu; site ve API dokümanı kontrol edildi.
-- [x] **CSV:** Formül olarak yorumlanabilecek metinler etkisizleştiriliyor; Türkçe, tırnak ve sayısal değerler korunuyor.
-- [x] **İstek yönetimi:** Hızlı filtre değişiminde eski veri gösterilmiyor. İstekler iptal edilebiliyor ve 20 saniyede zaman aşımına uğruyor; tekrar deneme korunuyor.
+## Changes completed
 
-## Kontroller
+- [x] **Tenure boundaries:** “The first two years” uses `length_of_service < 2`; “at most 2 years” uses `length_of_service <= 2`. There are 163 resignations in the first two completed years of service.
+- [x] **Date order:** Questions that mix ISO and day/month/year formats preserve the order in which the dates were entered. Reversed date or year ranges receive a clarification response.
+- [x] **Store totals:** Both the total and the rows in store-grouped answers include only the STORES business unit.
+- [x] **Query safety:** The assistant does not execute user questions as SQL. It reads data through fixed, read-only queries, while API filter values remain parameterized. SQL-like input was checked to ensure that it neither modified tables nor broadened API filter results.
+- [x] **Container permissions:** The API already used a non-root account; Nginx was updated to do the same. Read-only filesystems, dropped capabilities, and disabled privilege escalation were verified for both services.
+- [x] **Proxy configuration:** Docker DNS resolution and connection/response timeouts were configured. API paths and parameters are preserved, and both the site and API documentation were checked.
+- [x] **CSV exports:** Text that could be interpreted as a spreadsheet formula is neutralized. Unicode text, quotation marks, and numeric values are preserved.
+- [x] **Request handling:** Rapid filter changes no longer display the previous filter’s data. Requests can be cancelled and time out after 20 seconds; retry behavior is retained.
 
-- `python -m unittest discover -s tests -v`: 11 test grubu geçti; beklenen sonuçlar temiz CSV ile karşılaştırıldı.
-- `node --test frontend/src/csv.test.js`: 2 test geçti.
-- Docker Compose imajları oluşturuldu; iki konteyner de sağlıklı.
-- Nginx/Compose üzerinden API özeti, asistan, API dokümanı ve sorgu parametreleri doğrulandı.
-- Frontend derlemesi geçti. Kod kontrolünde yalnızca mevcut `components.jsx` Fast Refresh uyarıları kaldı; hata yok.
+## Validation
 
-Bu kayıt, paylaşılan dosyada bulunmayan bir yapılacaklar listesinin tamamlandığı anlamına gelmez. Ayrıntılı liste paylaşılırsa ayrıca karşılaştırılmalıdır.
+- `python -m unittest discover -s tests -v`: the original 11 test cases passed, with expected results checked against the cleaned CSV. English question support later expanded the suite to 13 passing test cases.
+- `node --test frontend/src/csv.test.js`: 2 tests passed.
+- Docker Compose built both images, and both containers reported healthy.
+- API summaries, assistant queries, API documentation, and query parameters were verified through Nginx and Compose.
+- The frontend build passed. Lint checks reported only the existing Fast Refresh warnings in `components.jsx`, with no errors.
+- Browser checks covered rapid filter changes, corrected tenure results, filtered CSV downloads, retries after request failures, and mobile layouts.
+
+This review documents the files that were inspected. It does not claim completion of a detailed checklist that was absent from the supplied document; any additional action items should be assessed separately.

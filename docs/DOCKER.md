@@ -1,26 +1,28 @@
-# Mercek’i Docker ile çalıştırma
+# Running Mercek with Docker
 
-Docker, uygulamanın kodunu ve ihtiyaç duyduğu çalışma ortamını imaj olarak paketler. Konteyner, bu imajın çalışan hâlidir. Compose ise birden fazla konteyneri birlikte başlatır.
+Docker packages an application’s code and runtime environment into an image. A container is a running instance of that image. Docker Compose starts and manages multiple containers together.
 
-## Bizim projede ne var?
+## How this project is packaged
 
 ```text
-Tarayıcı → localhost:8080 → frontend (Nginx) → backend (FastAPI) → warehouse.duckdb
+Browser → localhost:8080 → frontend (Nginx) → backend (FastAPI) → warehouse.duckdb
 ```
 
-| Dosya | Görevi |
+| File | Purpose |
 | --- | --- |
-| `backend/Dockerfile` | Python, API kütüphaneleri, kod ve hazır ambar dosyasından API imajını oluşturur |
-| `frontend/Dockerfile` | React’i Node.js ile derler; sonucu Nginx ile sunar |
-| `frontend/nginx.conf` | Siteyi sunar; `/api` isteklerini backend konteynerine iletir |
-| `compose.yaml` | İki servisi ve aralarındaki ağı birlikte yönetir |
-| `.dockerignore`, `frontend/.dockerignore` | Özel ve gereksiz dosyaları derleme paketinden dışarıda tutar |
+| `requirements.txt` | Lists the Python dependencies installed in the backend image |
+| `backend/Dockerfile` | Builds the API image with Python, its dependencies, application code, and the prepared warehouse |
+| `frontend/Dockerfile` | Builds React using Node.js, then serves the compiled files with Nginx |
+| `frontend/nginx.conf` | Serves the website and forwards `/api` requests to the backend container |
+| `frontend/nginx-main.conf` | Configures Nginx logging, its process ID, and temporary paths for non-root operation |
+| `compose.yaml` | Defines both services and their shared network |
+| `.dockerignore`, `frontend/.dockerignore` | Exclude private and unnecessary files from build contexts |
 
-DuckDB bir dosya veritabanıdır; üçüncü bir veritabanı konteyneri gerekmiyor. Hazır sentetik `warehouse.duckdb`, backend imajına kopyalanır. API dosyayı salt okunur açar. Ham CSV, notebook ve kişisel bilgisayar dosyaları imaja alınmaz.
+DuckDB is a file-based database, so a third database container is unnecessary. The prepared synthetic `warehouse.duckdb` file is copied into the backend image and opened read-only by the API. Raw CSV files, notebooks, and personal files are excluded from the images.
 
-## 1. Docker Desktop’ı kur
+## 1. Install Docker Desktop
 
-Windows için [Docker Desktop kurulumunu](https://docs.docker.com/desktop/setup/install/windows-install/) takip et. Kurulumun istediği WSL 2 / yeniden başlatma adımlarını tamamla; Docker Desktop’ı aç ve Linux konteyner motorunun hazır olmasını bekle. Sonra yeni bir terminalde kontrol et:
+On Windows, follow the [Docker Desktop installation guide](https://docs.docker.com/desktop/setup/install/windows-install/). Complete any required WSL 2 setup or restart, open Docker Desktop, and wait for the Linux container engine to be ready. Then check the installation in a new terminal:
 
 ```powershell
 docker --version
@@ -28,58 +30,60 @@ docker compose version
 docker info
 ```
 
-Bu projeyi Docker ile çalıştıracak kişinin Python ve Node.js’i bilgisayarına ayrıca kurması gerekmez. İlk imaj oluşturulurken internet bağlantısı gerekir.
+You do not need to install Python or Node.js separately to run this project with Docker. An internet connection is required for the initial image build.
 
-## 2. Proje ana klasöründe başlat
+## 2. Start the application from the repository root
 
-`compose.yaml` dosyasının bulunduğu klasörde:
+In the directory containing `compose.yaml`, run:
 
 ```powershell
 docker compose up --build -d
 ```
 
-`--build` imajları hazırlar, `-d` servisleri terminali meşgul etmeden çalıştırır. Frontend, backend’in gerçek ambar sorgusu başarılı olduktan sonra başlar.
+`--build` builds the images, and `-d` starts the services in the background. The frontend starts after the backend passes a health check that queries the warehouse.
 
-- Site: **http://localhost:8080**
-- API kontrolü: **http://localhost:8080/api/summary**
-- API dokümanı: **http://localhost:8080/docs**
+- Website: **http://localhost:8080**
+- API check: **http://localhost:8080/api/summary**
+- API documentation: **http://localhost:8080/docs**
 
-Normal geliştirmedeki 5173 ve 8000 portları yerine tarayıcı tek bir adres kullanır. API’nin 8000 portu bilgisayara açılmaz; frontend bu servise Compose ağı üzerinden ulaşır. `backend`, ağdaki servis adıdır; bir şifre veya dış sunucu değildir.
+Unlike the development setup on ports 5173 and 8000, the browser uses a single address. The backend’s port 8000 is not published to the host; the frontend reaches it over the Compose network. `backend` is the service name on that network, not a credential or external server.
 
-## 3. Çalıştığını kontrol et
+## 3. Verify the services
 
 ```powershell
 docker compose ps
 docker compose logs --tail=50
 ```
 
-İki servisin de sağlıklı (`healthy`) olması beklenir. API kontrolünde toplam çalışan 6284, ayrılan çalışan 1485 dönmelidir. Asistana “2014 yılında kaç çalışan ayrıldı?” sorulduğunda 253 cevabı beklenir.
+Both services should report `healthy`. The API summary should return 6,284 total employees and 1,485 employees who left. Asking the assistant “How many employees left in 2014?” should return 253.
 
-## 4. Kapat veya yeniden oluştur
+## 4. Stop or rebuild the application
 
 ```powershell
 docker compose down
 ```
 
-Bu komut projedeki konteynerleri ve Compose ağını kaldırır; bilgisayarındaki proje dosyalarını silmez. Veritabanı imaj içinde hazır bulunduğundan tekrar başlatıldığında aynı veri kullanılabilir. Bu sürüm veritabanına yazmaz; kullanıcı konuşmaları tarayıcı belleğindedir, kalıcı kaydedilmez.
+This removes the project’s containers and Compose network, not the project files on your computer. The prepared database is part of the image, so restarting the application makes the same data available again. This version does not write to the database. Chat conversations remain in browser memory and are not stored permanently.
 
-Kod veya `warehouse.duckdb` değişirse tekrar `docker compose up --build -d` çalıştır. Normal Vite geliştirme sunucusundaki gibi canlı yenileme bu Docker düzeninde yoktur.
+After changing application code or `warehouse.duckdb`, run `docker compose up --build -d` again. This Docker setup does not provide the live reload available in the Vite development server.
 
-## Sık karşılaşılan durumlar
+## Troubleshooting
 
-- **`docker` tanınmıyor:** Docker Desktop kurulmamış veya terminal kurulumdan sonra yeniden açılmamış olabilir.
-- **Docker motoruna bağlanılamıyor:** Docker Desktop’ın açık ve motorunun hazır olduğunu kontrol et.
-- **8080 portu kullanılıyor:** `compose.yaml` içindeki `127.0.0.1:8080:8080` satırında yalnızca `8080` kısmını, örneğin `8081` yap; siteyi yeni porttan aç.
-- **Backend sağlıklı olmuyor:** `docker compose logs backend` ile hataya bak. Hazır ambarın `data/processed/warehouse.duckdb` içinde bulunduğunu kontrol et.
+- **`docker` is not recognized:** Docker Desktop may not be installed, or the terminal may need to be reopened after installation.
+- **Cannot connect to the Docker engine:** Check that Docker Desktop is open and the engine is ready.
+- **Port 8080 is already in use:** In `compose.yaml`, change `127.0.0.1:8080:8080` to `127.0.0.1:8081:8080`. Only the host port changes; open the site on port 8081.
+- **The backend is unhealthy:** Run `docker compose logs backend` and check that `data/processed/warehouse.duckdb` exists in the repository.
 
-## Doğrulama durumu
+## Runtime permissions and proxy configuration
 
-18 Ekim 2026’da `docker compose up --build -d` ile iki imaj oluşturuldu ve iki konteyner de `healthy` durumuna geçti. Nginx üzerinden site, API dokümanı ve sorgular test edildi: toplam çalışan 6.284, ayrılan 1.485, 2014 ayrılma sayısı 253. Tarayıcıda pano, karşılaştırmalar ve 2014–2015 asistan tablosu kontrol edildi. Backend portu dışarıya açılmadı; site yalnızca `127.0.0.1:8080` üzerinde sunuluyor.
+The API runs as `appuser`, and Nginx runs as `nginx`. Both containers use read-only root filesystems. Additional Linux capabilities are dropped, and privilege escalation is disabled. Nginx writes temporary files only to a limited `/tmp` filesystem and listens on port 8080 inside the container. The browser address remains `http://localhost:8080`.
 
-Başvuru: [Docker Compose başlangıç rehberi](https://docs.docker.com/compose/gettingstarted/) · [Çok aşamalı imaj oluşturma](https://docs.docker.com/build/building/multi-stage/).
+Nginx periodically resolves the API service name through Docker DNS, avoiding a stale backend address after a container is recreated. Connection and response timeouts are configured. API paths and query parameters are forwarded without alteration.
 
-## Çalışma yetkileri ve proxy kontrolleri
+## Verification status
 
-API `appuser`, Nginx `nginx` kullanıcısıyla çalışır; ikisinin de çalışma dosya sistemi salt okunurdur. Ek Linux yetkileri kaldırılmış, sonradan yetki kazanımı engellenmiştir. Nginx’in geçici dosyaları sınırlı `/tmp` alanında tutulur; konteyner içinde de 8080 portu kullanılır. Tarayıcı adresi değişmez: `http://localhost:8080`.
+On October 18, 2026, `docker compose up --build -d` successfully built both images and started both containers in a healthy state. Checks through Nginx verified the website, API documentation, and query results: 6,284 employees, 1,485 departures, and 253 departures in 2014. Browser checks covered the dashboard, comparisons, and the assistant’s 2014–2015 comparison table.
 
-Nginx API servis adını Docker DNS üzerinden yeniden çözer; backend yeniden oluşturulursa eski adrese bağlı kalmaz. Bağlantı ve yanıt süreleri sınırlıdır. Sorgu parametreleri API’ye korunarak iletilir. İki konteynerin kullanıcı, sağlık ve salt okunur ayarları Docker üzerinde doğrulandı.
+Container users, health checks, and read-only filesystem settings were also verified. The backend port is not published; the application is bound to `127.0.0.1:8080` for local access only.
+
+References: [Docker Compose quickstart](https://docs.docker.com/compose/gettingstarted/) · [Multi-stage builds](https://docs.docker.com/build/building/multi-stage/).

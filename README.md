@@ -249,6 +249,7 @@ flowchart LR
 <summary><strong>Project structure and suggested reading order</strong></summary>
 
 ```text
+requirements.txt         Python API dependencies
 backend/                 FastAPI backend and data assistant
 frontend/                React application
 data/raw/                Original CSV and source documentation
@@ -272,7 +273,7 @@ Install Python and Node.js/npm, download the project, and open a terminal in the
 **1. Start the API:**
 
 ```powershell
-python -m pip install -r backend/requirements.txt
+python -m pip install -r requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
@@ -309,7 +310,7 @@ docker compose up --build -d
 
 Open the application at `http://localhost:8080` and the API documentation at `http://localhost:8080/docs`. The API and frontend run in separate containers, and the prepared synthetic DuckDB file is included in the backend image. You do not need to install Python or Node.js separately. To stop the application, run `docker compose down`.
 
-For configuration details, installation steps, and checks, see the [Docker guide](docs/DOCKER.md), currently in Turkish. **Both images were built successfully, and container health, API results, and browser interactions were verified on October 18, 2026.**
+For configuration details, installation steps, and checks, see the [Docker guide](docs/DOCKER.md). **Both images were built successfully, and container health, API results, and browser interactions were verified on October 18, 2026.**
 
 ![Docker Compose status showing healthy backend and frontend containers](docs/screenshots/docker-durumu.png)
 
@@ -354,4 +355,4 @@ During development, API totals were compared against the CSV. Browser checks cov
 
 The project focuses on data analysis, data quality, and reporting. Its findings describe a synthetic dataset and should not be generalized directly to real companies.
 
-A subsequent review corrected tenure boundaries, mixed date-format handling, and store totals in the assistant. CSV formula protection and request timeouts were added. Both Docker containers run as non-root users with read-only filesystems. Details are documented in the [review notes](docs/INCELEME_NOTLARI.md), currently in Turkish.
+A subsequent review corrected tenure boundaries, mixed date-format handling, and store totals in the assistant. CSV formula protection and request timeouts were added. Both Docker containers run as non-root users with read-only filesystems. Details are documented in the [review notes](docs/INCELEME_NOTLARI.md).

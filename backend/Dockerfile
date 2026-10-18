@@ -6,8 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Önce kütüphaneleri kuruyoruz; kod değişince tekrar indirilmezler.
-COPY backend/requirements.txt ./backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Yalnızca API kodunu ve hazırlanmış sentetik ambarı alıyoruz.
 COPY backend/ ./backend/
