@@ -37,7 +37,7 @@ class AssistantTests(unittest.TestCase):
     def test_city_and_tenure(self):
         for question, expected in [
             ("Vancouver’da emeklilik nedeniyle ayrılanlar kimler?", self.exits[(self.exits.city_name == "Vancouver") & (self.exits.termreason_desc == "Retirement")]),
-            ("İlk iki yılında istifa eden çalışanları getir", self.exits[(self.exits.length_of_service <= 2) & (self.exits.termreason_desc == "Resignation")]),
+            ("İlk iki yılında istifa eden çalışanları getir", self.exits[(self.exits.length_of_service < 2) & (self.exits.termreason_desc == "Resignation")]),
         ]:
             with self.subTest(question=question):
                 self.assertEqual({row[0] for row in self.ask(question)["rows"]}, set(expected.EmployeeID))
@@ -57,6 +57,26 @@ class AssistantTests(unittest.TestCase):
         employee = self.ask("3008 numaralı çalışanın ayrılma bilgisi nedir?")
         self.assertEqual(employee["rows"][0][0], 3008)
         self.assertEqual(sum(row[1] for row in self.ask("2014 yılında ayrılma sebeplerini göster")["rows"]), 253)
+
+    def test_first_years_and_inclusive_tenure_are_distinct(self):
+        self.assertEqual(self.ask("İlk iki yılında istifa edenleri getir")["count"], 163)
+        expected = self.exits[(self.exits.length_of_service <= 2) & (self.exits.termreason_desc == "Resignation")]
+        self.assertEqual(self.ask("En fazla 2 yıl çalışan istifa edenleri getir")["count"], len(expected))
+
+    def test_mixed_date_formats_keep_order(self):
+        for question in ["01.01.2014 ile 2014-03-31 arasında kaç kişi ayrıldı?", "2014-01-01 ile 31.03.2014 arasında kaç kişi ayrıldı?"]:
+            self.assertEqual(self.ask(question)["count"], 25)
+        self.assertFalse(self.ask("2014-03-31 ile 01.01.2014 arasında kaç kişi ayrıldı?")["supported"])
+        self.assertFalse(self.ask("2015-2014 arasında kaç kişi ayrıldı?")["supported"])
+
+    def test_store_group_total_matches_rows(self):
+        result = self.ask("Mağaza bazında ayrılma sayılarını göster")
+        self.assertEqual(result["count"], sum(row[1] for row in result["rows"]))
+
+    def test_sql_text_does_not_modify_database(self):
+        question = "2014 yılında kaç kişi ayrıldı?; DROP TABLE dim_employee; --"
+        self.ask(question)
+        self.assertEqual(self.ask("2014 yılında kaç kişi ayrıldı?")["count"], 253)
 
     def test_unsupported_or_ambiguous_questions(self):
         for question in ["merhaba", "2016’da kaç kişi ayrıldı?", "Ankara’da kaç kişi ayrıldı?", "XYZ departmanından kaç kişi ayrıldı?", "2014 yılında ayrılmayanları listele", "2014 yılında kaç kadın ayrıldı?", "Mart–Ocak 2014 arasında kaç kişi ayrıldı?", "31.02.2014 tarihinde kaç kişi ayrıldı?", "Gelecek ay kim ayrılacak?", "En çok ayrılma nerede?", "2014 ve 2015 Ocak ayında kaç kişi ayrıldı?"]:

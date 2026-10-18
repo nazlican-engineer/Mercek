@@ -141,7 +141,6 @@ Tüm kayıtlar üzerinde yaş aralığı **19–65**, kıdem aralığı **0–26
 
 Cinsiyet analizinde kadınların dönemlik ayrılma payı %27,91, erkeklerin %18,96; istifa payları ise sırasıyla %6,44 ve %5,79 bulundu. Sayısal farkın büyük kısmı emeklilik kayıtlarında görülüyor. Bu ilişkiler nedensellik veya istatistiksel anlamlılık kanıtı olarak sunulmaz.
 
-Daha ayrıntılı ilk inceleme ve karar geçmişi: [Analiz notları](ANALIZ_NOTLARI.md). Bu belge ilk aşamadaki planları da içerir; uygulanan son durum aşağıdaki temizlik tablosunda ve kodda görülebilir.
 
 ## Veri kalitesi: neleri değiştirdim, neleri korudum?
 
@@ -254,7 +253,6 @@ notebooks/
   03_duckdb_ambar.ipynb   Veri ambarını oluşturma ve SQL sorguları
 docs/screenshots/        Uygulama ve analiz görselleri
 tests/                   Veri asistanı kontrolleri
-ANALIZ_NOTLARI.md         İlk inceleme bulguları ve karar geçmişi
 ```
 
 Önce [01_analiz](notebooks/01_analiz.ipynb), sonra [02_sap_hazirlama](notebooks/02_sap_hazirlama.ipynb), ardından [03_duckdb_ambar](notebooks/03_duckdb_ambar.ipynb) incelenebilir.
@@ -320,7 +318,13 @@ python -m pip install pandas
 python -m unittest discover -s tests -v
 ```
 
-Yedi test grubu; farklı soru yazımlarını, birleşik filtreleri, tarih aralıklarını, mağaza–merkez ofis ayrımını, kıdemi, sıralamaları ve desteklenmeyen soruları kontrol eder. Beklenen sonuçlar temiz CSV’den hesaplanır.
+On bir test grubu; farklı soru yazımlarını, birleşik filtreleri, tarih aralıklarını, mağaza–merkez ofis ayrımını, kıdemi, sıralamaları ve desteklenmeyen soruları kontrol eder. Beklenen sonuçlar temiz CSV’den hesaplanır.
+
+CSV çıktısında formül güvenliği ve metin biçimlendirme kontrolleri:
+
+```powershell
+node --test frontend/src/csv.test.js
+```
 
 Arayüz derlemesi:
 
@@ -343,3 +347,6 @@ Geliştirme sırasında API toplamları CSV ile karşılaştırıldı; filtreler
 - Sonuçları kaynak veriye karşı kontrol etmek ve soru asistanının sınırlarını açıkça belirtmek.
 
 Projenin odağı veri analizi, veri kalitesi ve raporlamadır. Bulgular sentetik veri setine aittir; gerçek şirketlere doğrudan genellenmez.
+
+
+Son incelemede asistanın ilk yıl/kıdem sınırları, karışık tarih biçimleri ve mağaza toplamı düzeltildi. CSV formül koruması ve istek zaman aşımı eklendi. Docker konteynerleri yönetici olmayan kullanıcılarla, salt okunur dosya sistemiyle çalışır. Ayrıntılar: [İnceleme notları](docs/INCELEME_NOTLARI.md).

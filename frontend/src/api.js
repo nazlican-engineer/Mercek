@@ -2,24 +2,34 @@ import { useEffect, useState } from 'react'
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-// Filtre değişince yeni istek gönderiyoruz, önceki isteği iptal ediyoruz.
+// Önceki filtrenin sonucunu göstermiyoruz; eski isteği iptal ediyoruz.
 export function useApi(path) {
-  const [result, setResult] = useState({ data: null, loading: true, error: '' })
+  const [result, setResult] = useState({ key: '', data: null, error: '' })
   const [attempt, setAttempt] = useState(0)
+  const key = JSON.stringify([path, attempt])
   useEffect(() => {
     if (!path) return
     const controller = new AbortController()
-    setResult({ data: null, loading: true, error: '' })
+    let cancelled = false
+    let timedOut = false
+    const timer = setTimeout(() => { timedOut = true; controller.abort() }, 20000)
     fetch(`${API_URL}/api${path}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error('Veriler alınamadı.')
         return response.json()
       })
-      .then((data) => setResult({ data, loading: false, error: '' }))
-      .catch((error) => {
-        if (error.name !== 'AbortError') setResult({ data: null, loading: false, error: 'Verilere şu an ulaşılamıyor. API sunucusunun açık olduğunu kontrol et.' })
+      .then((data) => { if (!cancelled) setResult({ key, data, error: '' }) })
+      .catch(() => {
+        if (!cancelled) setResult({ key, data: null, error: timedOut ? 'Yanıt gecikti. Tekrar deneyebilirsin.' : 'Verilere şu an ulaşılamıyor. API sunucusunun açık olduğunu kontrol et.' })
       })
-    return () => controller.abort()
-  }, [path, attempt])
-  return { ...result, retry: () => setAttempt((value) => value + 1) }
+      .finally(() => clearTimeout(timer))
+    return () => { cancelled = true; clearTimeout(timer); controller.abort() }
+  }, [path, key])
+  const current = !!path && result.key === key
+  return {
+    data: current ? result.data : null,
+    error: current ? result.error : '',
+    loading: !!path && !current,
+    retry: () => setAttempt((value) => value + 1),
+  }
 }

@@ -18,4 +18,4 @@ Ham veride boş hücre yok; `1900-01-01` ve `Not Applicable` gibi işaret değer
 
 İsim, maaş, mesai ve memnuniyet alanları yok. ACTIVE kayıtlarında daha sonraki ayrılmaların bilgileri bulunabileceği için ayrılma sayıları gerçek TERMINATED olaylarından hesaplanır. Tarih filtresinde `recorddate_key` ile gerçek ayrılma tarihi karıştırılmamalıdır.
 
-İlk veri kontrolünün sayıları ve dosya özeti: `dataset_summary.json`. Ayrıntılı güncel bulgular: `ANALIZ_NOTLARI.md`.
+İlk veri kontrolünün sayıları ve dosya özeti: `dataset_summary.json`. Analiz bulguları ve uygulanan temizlik kararları proje README dosyasında açıklanır.

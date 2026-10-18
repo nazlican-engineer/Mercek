@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApi } from './api'
+import { csvCell } from './csv'
 import { number, reasonName, RequestState } from './components'
 
 const emptyFilters = { year: '', department: '', store: '', city: '', reason: '', start_date: '', end_date: '' }
@@ -26,7 +27,7 @@ export default function VedaDefteri({ options, initialYear = '', initialReason =
   function downloadCsv() {
     const headings = ['Çalışan no', 'Ayrılma tarihi', 'Departman', 'Görev', 'Mağaza', 'Şehir', 'İş birimi', 'Sebep', 'Kıdem']
     const values = filtered.map((item) => [item.calisan_no, item.ayrilma_tarihi, item.departman, item.gorev, item.magaza_no, item.sehir, item.is_birimi, reasonName(item.sebep), item.kidem])
-    const csv = [headings, ...values].map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';')).join('\r\n')
+    const csv = [headings, ...values].map((row) => row.map(csvCell).join(';')).join('\r\n')
     const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }))
     const link = document.createElement('a')
     link.href = url

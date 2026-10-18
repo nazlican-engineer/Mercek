@@ -84,8 +84,14 @@ def answer_question(question: str, db_path: Path):
     if any(year < 2006 or year > 2015 for year in years):
         return clarify("Veri seti 2006–2015 yıllarını kapsıyor. Bu aralıktan bir dönem seçebilir misin?")
 
-    if len(years) == 2 and not any(word in text for word in ["karsilastir"]) and re.search(r"\d{4}\s*[-–]\s*\d{4}|yillari arasi", text):
-        years = list(range(years[0], years[-1] + 1))
+    year_range = re.search(r"(\d{4})\s*[-–]\s*(\d{4})|(?P<first>\d{4}).*?(?P<last>\d{4})\s+yillari arasi", year_text)
+    if year_range and not re.search(r"\d{4}-\d{2}-\d{2}", year_text):
+        first = int(year_range[1] or year_range["first"])
+        last = int(year_range[2] or year_range["last"])
+        if first > last:
+            return clarify("Başlangıç yılı bitiş yılından sonra olamaz.")
+        if not "karsilastir" in text:
+            years = list(range(first, last + 1))
 
     reason_filters = []
     for reason, keywords in [("Resignation", ["istifa", "resignation", "resignaton"]), ("Retirement", ["emekli", "retirement"]), ("Layoff", ["isten cikar", "layoff", "gonulsuz"])]:
@@ -100,10 +106,17 @@ def answer_question(question: str, db_path: Path):
     if months and (len(months) > 2 or months[0] > months[-1]):
         return clarify("Tek ay veya aynı yıl içinde sıralı iki ay belirt: örneğin Ocak–Mart 2014.")
     start = end = None
-    iso_dates = re.findall(r"(?<!\d)(\d{4}-\d{2}-\d{2})(?!\d)", text)
-    local_dates = re.findall(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](\d{4})(?!\d)", text)
     try:
-        dates = [date.fromisoformat(value) for value in iso_dates] + [date(int(y), int(m), int(d)) for d, m, y in local_dates]
+        # Farklı tarih biçimleri kullanılsa da sorudaki sıralamayı koruyoruz.
+        date_tokens = re.finditer(r"(?<!\d)(\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{4})(?!\d)", text)
+        dates = []
+        for token in date_tokens:
+            value = token[0]
+            if "-" in value:
+                dates.append(date.fromisoformat(value))
+            else:
+                day, month, year = re.split(r"[./]", value)
+                dates.append(date(int(year), int(month), int(day)))
         if dates:
             if len(dates) > 2:
                 return clarify("En fazla iki tarih belirt: örneğin 01.01.2014 ile 31.03.2014 arasında kaç kişi ayrıldı?")
@@ -126,6 +139,7 @@ def answer_question(question: str, db_path: Path):
 
     tenure = re.search(r"(?:ilk|en fazla)\s+(bir|iki|uc|\d+)\s+yil", text)
     tenure_max = None
+    first_years = bool(tenure and tenure[0].startswith("ilk"))
     if tenure:
         values = {"bir": 1, "iki": 2, "uc": 3}
         tenure_max = values.get(tenure[1], int(tenure[1]) if tenure[1].isdigit() else 0)
@@ -177,7 +191,11 @@ def answer_question(question: str, db_path: Path):
         if store is not None and (store_no != store or unit != "STORES"): continue
         if head_office and unit != "HEADOFFICE": continue
         if employee is not None and emp != employee: continue
-        if tenure_max is not None and (service is None or service > tenure_max): continue
+        if tenure_max is not None:
+            if service is None: continue
+            if first_years and service >= tenure_max: continue
+            if not first_years and service > tenure_max: continue
+        if grouping == "store" and unit != "STORES": continue
         selected.append(row)
 
     filters = []
@@ -190,7 +208,8 @@ def answer_question(question: str, db_path: Path):
     if head_office: filters.append("Merkez ofis")
     if employee is not None: filters.append(f"Çalışan {employee}")
     if reason: filters.append(REASONS[reason])
-    if tenure_max is not None: filters.append(f"Kıdem en fazla {tenure_max} yıl (tam yıl)")
+    if tenure_max is not None:
+        filters.append(f"Kıdem {tenure_max} tam yıldan az" if first_years else f"Kıdem en fazla {tenure_max} yıl (tam yıl)")
     result = {"supported": True, "source": "DuckDB · Gerçek ayrılma tarihi · Benzersiz çalışan", "filters": filters, "count": len({row[0] for row in selected})}
     if len(years) == 1 and not any([reason, department, city, store is not None, employee is not None, head_office, start, tenure_max is not None, grouping]):
         result["year"] = years[0]

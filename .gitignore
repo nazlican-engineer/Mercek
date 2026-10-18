@@ -9,3 +9,6 @@ __pycache__/
 .codex_tmp/
 node_modules/
 data/raw/*.zip
+
+# Kişisel çalışma notları GitHub’a gönderilmiyor.
+/kisisel_notlar/

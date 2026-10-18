@@ -56,8 +56,10 @@ export default function DataAssistant({ openRecords }) {
     setLoading(true)
     setQuestion('')
     setMessages((previous) => [...previous, { role: 'user', text }])
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20000)
     try {
-      const response = await fetch(`${API_URL}/api/assistant?${new URLSearchParams({ question: text })}`)
+      const response = await fetch(`${API_URL}/api/assistant?${new URLSearchParams({ question: text })}`, { signal: controller.signal })
       if (!response.ok) throw new Error('Request failed')
       const data = await response.json()
       setMessages((previous) => [...previous, { role: 'assistant', text: data.answer, source: data.source, filters: data.filters, columns: data.columns, rows: data.rows, year: data.supported ? data.year : null }])
@@ -65,6 +67,7 @@ export default function DataAssistant({ openRecords }) {
       setMessages((previous) => [...previous, { role: 'assistant', text: 'Verilere şu an ulaşamıyorum. API bağlantısını kontrol edip sorunu yeniden gönderebilirsin.', error: true }])
       setQuestion(text)
     } finally {
+      clearTimeout(timer)
       busy.current = false
       setLoading(false)
     }

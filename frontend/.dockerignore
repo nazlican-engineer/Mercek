@@ -5,6 +5,7 @@
 !index.html
 !vite.config.js
 !nginx.conf
+!nginx-main.conf
 !src/
 !src/**
 !public/
