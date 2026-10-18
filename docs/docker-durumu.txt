@@ -1,5 +1,5 @@
 $ docker compose ps
 
-NAME                SERVICE    STATUS                   PORTS
-mercek-backend-1    backend    Up 2 minutes (healthy)   8000/tcp
-mercek-frontend-1   frontend   Up 2 minutes (healthy)   127.0.0.1:8080->80/tcp
+NAME                SERVICE    STATUS                        PORTS
+mercek-backend-1    backend    Up 4 minutes (healthy)        8000/tcp
+mercek-frontend-1   frontend   Up About a minute (healthy)   127.0.0.1:8080->8080/tcp

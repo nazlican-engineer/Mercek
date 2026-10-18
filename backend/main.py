@@ -6,7 +6,7 @@ import duckdb
 from backend.assistant import answer_question
 
 # API uygulamasını oluşturuyoruz.
-app = FastAPI(title="Mercek", description="2006–2015 sentetik çalışan verisinin geçmiş ayrılma analizi.")
+app = FastAPI(title="Mercek", description="Historical employee departure analytics using synthetic records from 2006–2015.")
 # React arayüzünün API'ye erişmesine izin veriyoruz.
 app.add_middleware(
     CORSMiddleware,
@@ -21,7 +21,7 @@ app.add_middleware(
 # API'nin çalışıp çalışmadığını kontrol ediyoruz.
 @app.get("/")
 def home():
-    return {"mesaj": "Mercek API çalışıyor"}
+    return {"mesaj": "Mercek API is running"}
 
 # Veritabanının konumunu belirliyoruz.
 DB_PATH = (
@@ -170,7 +170,7 @@ def departures(
     end_date: date | None = None,
 ):
     if start_date and end_date and start_date > end_date:
-        raise HTTPException(status_code=422, detail="Başlangıç tarihi bitişten sonra olamaz.")
+        raise HTTPException(status_code=422, detail="The start date must not be after the end date.")
 
     # Filtre değerlerini SQL metnine eklemiyoruz; parametre olarak gönderiyoruz.
     conditions = ["f.left_flag = 1"]
@@ -310,13 +310,13 @@ def breakdown(
 ):
     groups = {
         "department": "d.department_name",
-        "store": "'Mağaza ' || CAST(s.store_code AS VARCHAR) || ' · ' || s.city_name",
+        "store": "'Store ' || CAST(s.store_code AS VARCHAR) || ' · ' || s.city_name",
         "city": "s.city_name",
-        "gender": "CASE WHEN e.gender_code = 1 THEN 'Erkek' WHEN e.gender_code = 2 THEN 'Kadın' ELSE 'Belirtilmemiş' END",
-        "tenure": "CASE WHEN f.length_of_service <= 2 THEN '0–2 yıl' WHEN f.length_of_service <= 5 THEN '3–5 yıl' WHEN f.length_of_service <= 10 THEN '6–10 yıl' WHEN f.length_of_service <= 15 THEN '11–15 yıl' ELSE '16+ yıl' END",
+        "gender": "CASE WHEN e.gender_code = 1 THEN 'Male' WHEN e.gender_code = 2 THEN 'Female' ELSE 'Unspecified' END",
+        "tenure": "CASE WHEN f.length_of_service <= 2 THEN '0–2 years' WHEN f.length_of_service <= 5 THEN '3–5 years' WHEN f.length_of_service <= 10 THEN '6–10 years' WHEN f.length_of_service <= 15 THEN '11–15 years' ELSE '16+ years' END",
     }
     if group_by not in groups:
-        raise HTTPException(status_code=422, detail="Geçersiz karşılaştırma grubu.")
+        raise HTTPException(status_code=422, detail="Invalid comparison group.")
 
     period_filter = "WHERE status_year = ?" if year is not None else ""
     store_filter = "WHERE s.business_unit = 'STORES'" if group_by == "store" else ""

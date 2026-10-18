@@ -120,3 +120,5 @@
 
 .assistant-examples { flex-shrink: 0; margin-block: 12px; font-size: 12px; color: var(--ac); }.assistant-examples summary { cursor: pointer; padding: 6px 0; }.assistant-examples[open] { max-height: 150px; overflow: auto; }.assistant-examples .assistant-example { display: block; border-bottom: 1px solid var(--line); padding: 10px 0; width: 100%; }
 .assistant-table-scroll { overflow-x: auto; max-width: 100%; margin-top: 14px; }.assistant-table-scroll table { min-width: 300px; width: max-content; font-size: 11px; }.assistant-table-scroll td, .assistant-table-scroll th { padding: 10px; max-width: 200px; }.assistant-table-scroll th:first-child, .assistant-table-scroll td:first-child { padding-left: 0; }.assistant-message .assistant-filters { color: var(--mut); font-size: 11px; }.assistant-panel { width: min(520px, calc(100vw - 32px)); }
+
+@media(max-width:640px) { .site-header nav { gap: 16px; }.site-header nav a { font-size: 11px; gap: 4px; } }

@@ -15,12 +15,12 @@ export function useApi(path) {
     const timer = setTimeout(() => { timedOut = true; controller.abort() }, 20000)
     fetch(`${API_URL}/api${path}`, { signal: controller.signal })
       .then((response) => {
-        if (!response.ok) throw new Error('Veriler alınamadı.')
+        if (!response.ok) throw new Error('Unable to retrieve data.')
         return response.json()
       })
       .then((data) => { if (!cancelled) setResult({ key, data, error: '' }) })
       .catch(() => {
-        if (!cancelled) setResult({ key, data: null, error: timedOut ? 'Yanıt gecikti. Tekrar deneyebilirsin.' : 'Verilere şu an ulaşılamıyor. API sunucusunun açık olduğunu kontrol et.' })
+        if (!cancelled) setResult({ key, data: null, error: timedOut ? 'The request timed out. Please try again.' : 'Data is currently unavailable. Check that the API server is running.' })
       })
       .finally(() => clearTimeout(timer))
     return () => { cancelled = true; clearTimeout(timer); controller.abort() }

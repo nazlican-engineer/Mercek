@@ -13,7 +13,7 @@
 
 Mercek is a data analytics project I built to explore **when employees left, which departments and stores they belonged to, and the reasons recorded for their departures**. The project began with data exploration and cleaning, then grew into a complete workflow using SAP-inspired source tables, a DuckDB data warehouse, a FastAPI backend, and a React interface.
 
-> The dataset is synthetic. The application analyzes historical records; it does not contain real employee information or predict future departures. The application has been tested locally with Docker Compose and has not been deployed to a public hosting service. The interface and data assistant are in Turkish.
+> The dataset is synthetic. The application analyzes historical records; it does not contain real employee information or predict future departures. The application has been tested locally with Docker Compose and has not been deployed to a public hosting service. The interface and data assistant are in English. Supported Turkish question patterns are retained for compatibility.
 
 ![Mercek overview: summary figures, annual trends, and departure charts](docs/screenshots/nabiz.png)
 
@@ -162,42 +162,47 @@ The two flagged records are dated 9 and 26 days before the employees’ hire dat
 
 ## Application features
 
-### Nabız — overview
+### Overview
 
 A period filter, unique employee and departure counts, an annual area chart, stacked yearly departure reasons, a reason-distribution doughnut chart, and tenure at departure. The two time-series charts retain the full ten-year context, while the other summaries follow the selected period. Relevant charts link to the underlying departure records.
 
-### Veda defteri — departure records
+### Departure records
 
 Filters for year, date range, department, store, city, and reason, along with employee-ID search, pagination, and CSV export. The export includes every record matching the filters and search, not just the current page.
 
 ![Mercek departure archive with filters and employee records](docs/screenshots/veda-defteri.png)
 
-### Karşılaştırmalar — group comparisons
+### Comparisons
 
 Compare departments, cities, genders, and tenure groups by departure count or percentage. **Store comparisons have their own permanently visible section.** Both sections use the same period filter. Store analysis includes only the STORES business unit.
 
-![Mercek comparison page showing department and store analyses](docs/screenshots/mercek.png)
+![Mercek department comparison with counts and departure shares](docs/screenshots/mercek.png)
 
-### Mercek Veri Asistanı — questions about the data
+<details>
+<summary><strong>View the store comparison</strong></summary>
+
+![Store comparison with employee counts and departure shares](docs/screenshots/store-comparison.png)
+
+</details>
+
+### Mercek Data Assistant — questions about the data
 
 The pink icon in the bottom-right corner of every page opens the chat panel. The assistant queries DuckDB using predefined question types and filter-matching rules; it does not use a trained model or an external AI service. It recognizes alternative phrasings within its supported patterns, but it is not a general-purpose language model.
 
-The assistant currently accepts **Turkish questions**. Examples below are kept in Turkish so they can be copied directly into the application:
+The assistant supports **English questions**, including alternative phrasings within its predefined query patterns. Examples:
 
-| Question to enter | English meaning |
-| --- | --- |
-| `2014 yılında kaç çalışan ayrıldı?` | How many employees left in 2014? |
-| `2014’te ayrılanların mağaza bilgilerini getir.` | Show store information for employees who left in 2014. |
-| `2015’te Meats departmanından istifa edenleri listele.` | List employees who resigned from the Meats department in 2015. |
-| `35 numaralı mağazadan kimler ayrıldı?` | Which employees left store 35? |
-| `Ocak–Mart 2014 arasında kaç kişi ayrıldı?` | How many employees left between January and March 2014? |
-| `2014 ve 2015 ayrılma sayılarını karşılaştır.` | Compare departure counts for 2014 and 2015. |
-| `En çok istifa görülen beş departmanı göster.` | Show the five departments with the most resignations. |
-| `3008 numaralı çalışanın ayrılma bilgisi nedir?` | What is the departure record for employee 3008? |
+- “How many employees left in 2014?”
+- “Show store information for employees who left in 2014.”
+- “List employees who resigned from the Meats department in 2015.”
+- “Who left store 35?”
+- “How many employees left between January and March 2014?”
+- “Compare departure counts for 2014 and 2015.”
+- “Show the top five departments by resignations.”
+- “Show the departure record for employee 3008.”
 
 Responses show the filters applied and the data source, with lists presented as tables. Head-office records are identified separately from stores. Unsupported or ambiguous questions prompt a clarification. The conversation is retained when switching pages but resets when the browser page is refreshed.
 
-![Mercek data assistant answering a year-comparison question with a table](docs/screenshots/veri-asistani.png)
+<img src="docs/screenshots/veri-asistani.png" alt="Mercek Data Assistant comparing departure counts for 2014 and 2015" width="520" />
 
 The interface follows the system’s light or dark theme preference. [Dark theme preview](docs/screenshots/pano-koyu.png).
 
@@ -319,7 +324,7 @@ python -m pip install pandas
 python -m unittest discover -s tests -v
 ```
 
-Eleven test cases cover alternative question phrasings, combined filters, date ranges, store versus head-office records, tenure boundaries, rankings, and unsupported questions. Expected results are calculated from the cleaned CSV.
+Thirteen test cases cover English and Turkish question patterns, combined filters, date ranges, store versus head-office records, tenure boundaries, rankings, and unsupported questions. Expected results are calculated from the cleaned CSV.
 
 To check CSV formula protection and text formatting:
 

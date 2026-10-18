@@ -1,25 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 
 const EXAMPLES = [
-  '2014 yılında kaç çalışan ayrıldı?',
-  '2014 yılında ayrılan çalışanların mağaza bilgilerini getir',
-  '2015’te Meats departmanından istifa edenleri listele',
-  '35 numaralı mağazadan kimler ayrıldı?',
-  'Vancouver’da emeklilik nedeniyle ayrılanlar kimler?',
-  'Ocak–Mart 2014 arasında kaç kişi ayrıldı?',
-  '2014 ve 2015 ayrılma sayılarını karşılaştır',
-  'En çok istifa görülen beş departmanı göster',
-  'İlk iki yılında istifa eden çalışanları getir',
-  '3008 numaralı çalışanın ayrılma bilgisi nedir?',
-  '2014 yılında ayrılma sebeplerini göster',
+  'How many employees left in 2014?',
+  'Show store information for employees who left in 2014',
+  'List employees who resigned from the Meats department in 2015',
+  'Who left store 35?',
+  'List retirements in Vancouver',
+  'How many employees left between January and March 2014?',
+  'Compare departure counts for 2014 and 2015',
+  'Show the top five departments by resignations',
+  'List employees who resigned in their first two years',
+  'Show the departure record for employee 3008',
+  'Show departure reasons in 2014',
 ]
 
 function ResultTable({ columns, rows }) {
   const [visible, setVisible] = useState(10)
   return <>
-    <div className="assistant-table-scroll" tabIndex={0} role="region" aria-label="Sorgu sonuçları"><table><caption className="sr-only">Veritabanından gelen sorgu sonuçları</caption><thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead><tbody>{rows.slice(0, visible).map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value ?? '—'}</td>)}</tr>)}</tbody></table></div>
-    <small>{Math.min(visible, rows.length)} / {rows.length} sonuç gösteriliyor.</small>
-    {visible < rows.length && <button className="text-button" onClick={() => setVisible((value) => value + 25)}>25 sonuç daha göster ↓</button>}
+    <div className="assistant-table-scroll" tabIndex={0} role="region" aria-label="Query results"><table><caption className="sr-only">Query results from the database</caption><thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead><tbody>{rows.slice(0, visible).map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value ?? '—'}</td>)}</tr>)}</tbody></table></div>
+    <small>{Math.min(visible, rows.length)} / {rows.length} results shown.</small>
+    {visible < rows.length && <button className="text-button" onClick={() => setVisible((value) => value + 25)}>Show 25 more results ↓</button>}
   </>
 }
 
@@ -64,7 +64,7 @@ export default function DataAssistant({ openRecords }) {
       const data = await response.json()
       setMessages((previous) => [...previous, { role: 'assistant', text: data.answer, source: data.source, filters: data.filters, columns: data.columns, rows: data.rows, year: data.supported ? data.year : null }])
     } catch {
-      setMessages((previous) => [...previous, { role: 'assistant', text: 'Verilere şu an ulaşamıyorum. API bağlantısını kontrol edip sorunu yeniden gönderebilirsin.', error: true }])
+      setMessages((previous) => [...previous, { role: 'assistant', text: 'I cannot reach the data right now. Check the API connection and send your question again.', error: true }])
       setQuestion(text)
     } finally {
       clearTimeout(timer)
@@ -74,20 +74,20 @@ export default function DataAssistant({ openRecords }) {
   }
 
   return <>
-    <button ref={launcher} className="assistant-launcher" aria-label={open ? 'Mercek Veri Asistanı’nı kapat' : 'Mercek Veri Asistanı’nı aç'} aria-expanded={open} aria-controls="assistant-panel" onClick={() => open ? close() : setOpen(true)}>
+    <button ref={launcher} className="assistant-launcher" aria-label={open ? 'Close Mercek Data Assistant' : 'Open Mercek Data Assistant'} aria-expanded={open} aria-controls="assistant-panel" onClick={() => open ? close() : setOpen(true)}>
       {open ? <span aria-hidden="true">×</span> : <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2v-10a9 9 0 0 1 18 0Z" /><path d="M7 10h8M7 14h5" strokeLinecap="round" /></svg>}
     </button>
     <section id="assistant-panel" className="data-assistant assistant-panel" role="region" aria-labelledby="assistant-title" hidden={!open} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); close() } }}>
 
-    <div className="assistant-heading"><div><span className="eyebrow">VERİYE BİR SORU SOR</span><h2 id="assistant-title">Mercek Veri Asistanı</h2></div><button className="assistant-close" aria-label="Sohbet panelini kapat" onClick={close}>×</button></div>
-    <p className="muted">Ayrılma sayıları, çalışan listeleri ve karşılaştırmalar sorabilirsin. Yıl, şehir, departman ve mağaza belirtmen yeterli.</p>
-    <details className="assistant-examples"><summary>Örnek soruları gör</summary>{EXAMPLES.map((example) => <button key={example} className="assistant-example" onClick={() => { setQuestion(example); input.current?.focus() }} disabled={loading}>{example} ↙</button>)}</details>
-    <div ref={conversation} className="assistant-conversation" role="log" aria-label="Veri asistanı konuşması" aria-live="polite" aria-relevant="additions text">
-      {messages.map((message, index) => <div key={index} className={`assistant-message ${message.role}`}><span className="eyebrow">{message.role === 'user' ? 'SEN' : 'MERCEK'}</span><p>{message.text}</p>{message.filters && <p className="assistant-filters">Filtreler: {message.filters.join(" · ")}</p>}{message.columns && message.rows && <ResultTable columns={message.columns} rows={message.rows} />}{message.source && <small>{message.source}</small>}{message.year && <button className="text-button" onClick={() => { openRecords(String(message.year)); close() }}>{message.year} kayıtlarını aç ↗</button>}</div>)}
-      {loading && <p className="muted" role="status">Veritabanına bakıyorum…</p>}
+    <div className="assistant-heading"><div><span className="eyebrow">ASK YOUR DATA</span><h2 id="assistant-title">Mercek Data Assistant</h2></div><button className="assistant-close" aria-label="Close chat panel" onClick={close}>×</button></div>
+    <p className="muted">Ask about departure counts, employee records, or comparisons. Add a year, city, department, or store to narrow your question.</p>
+    <details className="assistant-examples"><summary>Browse example questions</summary>{EXAMPLES.map((example) => <button key={example} className="assistant-example" onClick={() => { setQuestion(example); input.current?.focus() }} disabled={loading}>{example} ↙</button>)}</details>
+    <div ref={conversation} className="assistant-conversation" role="log" aria-label="Data assistant conversation" aria-live="polite" aria-relevant="additions text">
+      {messages.map((message, index) => <div key={index} className={`assistant-message ${message.role}`}><span className="eyebrow">{message.role === 'user' ? 'YOU' : 'MERCEK'}</span><p>{message.text}</p>{message.filters && <p className="assistant-filters">Filters: {message.filters.join(" · ")}</p>}{message.columns && message.rows && <ResultTable columns={message.columns} rows={message.rows} />}{message.source && <small>{message.source}</small>}{message.year && <button className="text-button" onClick={() => { openRecords(String(message.year)); close() }}>Open {message.year} records ↗</button>}</div>)}
+      {loading && <p className="muted" role="status">Checking the database…</p>}
     </div>
-    <form className="assistant-form" onSubmit={ask}><label htmlFor="assistant-question">Sorun</label><div><input ref={input} id="assistant-question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Örneğin: 2015’te kaç kişi ayrıldı?" maxLength={300} required disabled={loading} /><button type="submit" disabled={loading || !question.trim()}>{loading ? 'Yanıtlanıyor…' : 'Sor ↗'}</button></div></form>
-    <p className="data-caption">Cevaplar kayıtlı veriden hesaplanır. Hazır soru türleri farklı yazımlarla eşleştirilir; anlaşılmayan sorularda açıklama istenir.</p>
+    <form className="assistant-form" onSubmit={ask}><label htmlFor="assistant-question">Your question</label><div><input ref={input} id="assistant-question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="For example: How many employees left in 2015?" maxLength={300} required disabled={loading} /><button type="submit" disabled={loading || !question.trim()}>{loading ? 'Working…' : 'Ask ↗'}</button></div></form>
+    <p className="data-caption">Answers are calculated from recorded data. Supported question patterns accept alternative wording; unclear questions receive a clarification request.</p>
   </section>
   </>
 }

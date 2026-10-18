@@ -32,7 +32,7 @@ class AssistantTests(unittest.TestCase):
         expected = self.exits[(self.exits.store_name == 35) & (self.exits.BUSINESS_UNIT == "STORES")]
         result = self.ask("35 numaralı mağazadan kimler ayrıldı?")
         self.assertEqual({row[0] for row in result["rows"]}, set(expected.EmployeeID))
-        self.assertTrue(all(row[4] == "Mağaza 35" for row in result["rows"]))
+        self.assertTrue(all(row[4] == "Store 35" for row in result["rows"]))
 
     def test_city_and_tenure(self):
         for question, expected in [
@@ -77,6 +77,40 @@ class AssistantTests(unittest.TestCase):
         question = "2014 yılında kaç kişi ayrıldı?; DROP TABLE dim_employee; --"
         self.ask(question)
         self.assertEqual(self.ask("2014 yılında kaç kişi ayrıldı?")["count"], 253)
+
+    def test_english_questions_match_existing_patterns(self):
+        questions = [
+            ("How many employees left in 2014?", 253),
+            ("What is the total number of departures in 2014?", 253),
+            ("Show store information for employees who left in 2014", 253),
+            ("List employees who resigned from the Meats department in 2015", 6),
+            ("Who left store 35?", 138),
+            ("List retirements in Vancouver", 219),
+            ("How many employees left between January and March 2014?", 25),
+            ("List employees who resigned in their first two years", 163),
+            ("Show the departure record for employee 3008", 1),
+        ]
+        for question, expected in questions:
+            with self.subTest(question=question):
+                result = self.ask(question)
+                self.assertTrue(result["supported"], result)
+                self.assertEqual(result["count"], expected)
+                self.assertFalse(any(char in result["answer"] for char in "çğıöşüÇĞİÖŞÜ"))
+        result = self.ask("Compare departure counts for 2014 and 2015")
+        self.assertEqual(result["rows"], [[2014, 253], [2015, 162]])
+        self.assertEqual(result["columns"], ["Year", "Employees who left"])
+        self.assertEqual(len(self.ask("Show the top five departments by resignations")["rows"]), 5)
+        self.assertEqual(sum(row[1] for row in self.ask("Show departure reasons in 2014")["rows"]), 253)
+
+    def test_english_entity_names_and_clarifications(self):
+        for name in ["Employee Records", "Information Technology", "Customer Service"]:
+            result = self.ask(f"Show departures from the {name} department")
+            self.assertTrue(result["supported"], result)
+            self.assertIn(name, result["filters"])
+        for question in ["Predict departures next year", "How many women left in 2014?", "Compare salary by department", "How many employees left in 2026?"]:
+            result = self.ask(question)
+            self.assertFalse(result["supported"])
+            self.assertFalse(any(char in result["answer"] for char in "çğıöşüÇĞİÖŞÜ"))
 
     def test_unsupported_or_ambiguous_questions(self):
         for question in ["merhaba", "2016’da kaç kişi ayrıldı?", "Ankara’da kaç kişi ayrıldı?", "XYZ departmanından kaç kişi ayrıldı?", "2014 yılında ayrılmayanları listele", "2014 yılında kaç kadın ayrıldı?", "Mart–Ocak 2014 arasında kaç kişi ayrıldı?", "31.02.2014 tarihinde kaç kişi ayrıldı?", "Gelecek ay kim ayrılacak?", "En çok ayrılma nerede?", "2014 ve 2015 Ocak ayında kaç kişi ayrıldı?"]:
