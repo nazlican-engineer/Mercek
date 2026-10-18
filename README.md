@@ -6,7 +6,7 @@ Mercek; çalışanların **ne zaman, hangi departmandan, hangi mağazadan ve han
 
 **Python · Pandas · SQL · DuckDB · FastAPI · React · Vite**
 
-> Veri seti sentetiktir. Uygulama geçmiş kayıtları inceler; gerçek çalışanlar hakkında bilgi veya geleceğe yönelik ayrılma tahmini sunmaz. Web uygulaması yerelde çalışır; canlı yayın ve Docker henüz hazırlanmadı.
+> Veri seti sentetiktir. Uygulama geçmiş kayıtları inceler; gerçek çalışanlar hakkında bilgi veya geleceğe yönelik ayrılma tahmini sunmaz. Web uygulaması yerelde çalışır. Docker Compose ile yerel çalışma doğrulandı; canlı yayın henüz yapılmadı.
 
 ![Mercek Nabız sayfası: özet sayılar, yıllık eğilim ve ayrılma grafikleri](docs/screenshots/nabiz.png)
 
@@ -287,6 +287,22 @@ python -m notebook --notebook-dir=notebooks
 ```
 
 Notebook’lar `notebooks/` çalışma klasörünü kullanır; `../data/` yolları buna göredir. CSV dosyaları tarih veri tipini saklamaz; yeniden okunduğunda tarih dönüşümü gerekebilir. Ambar notebook’undaki `CREATE TABLE IF NOT EXISTS` mevcut tabloları yenilemez; kaynak değişirse ambarın ayrıca yeniden oluşturulması gerekir.
+
+## Docker ile tek komutta başlatma
+
+Docker Desktop açıkken proje ana klasöründe:
+
+```powershell
+docker compose up --build -d
+```
+
+Site `http://localhost:8080`, API dokümanı `http://localhost:8080/docs` adresindedir. API ve arayüz ayrı konteynerlerde çalışır; hazır sentetik DuckDB dosyası API imajına eklenir. Python veya Node.js’i ayrıca kurmak gerekmez. Kapatmak için `docker compose down` kullanılır.
+
+Dosyaların görevleri, kurulum ve kontroller: [Docker rehberi](docs/DOCKER.md). **Docker imajları oluşturuldu; iki servisin sağlığı, API sonuçları ve tarayıcı akışı doğrulandı (18 Ekim 2026).**
+
+![Docker Compose kontrolü: API ve arayüz konteynerleri çalışıyor ve sağlıklı](docs/screenshots/docker-durumu.png)
+
+Görsel, 18 Ekim 2026’da alınan gerçek `docker compose ps` çıktısının sunumudur. [Metin çıktısı](docs/docker-durumu.txt). Canlı durumu görmek için aynı komutu kendi terminalinde çalıştırabilirsin.
 
 ## Doğrulama
 

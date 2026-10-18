@@ -1,0 +1,17 @@
+# Arayüz paketine yalnızca derleme kaynakları giriyor.
+**
+!package.json
+!package-lock.json
+!index.html
+!vite.config.js
+!nginx.conf
+!src/
+!src/**
+!public/
+!public/**
+
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/credentials*

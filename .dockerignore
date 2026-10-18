@@ -1,0 +1,16 @@
+# Backend derlemesine yalnızca gerekli dosyaları gönderiyoruz.
+**
+!backend/
+!backend/**
+!data/
+!data/processed/
+!data/processed/warehouse.duckdb
+
+# İzin verilen klasörlerde de özel ve geçici dosyaları almıyoruz.
+**/.env
+**/.env.*
+**/__pycache__/
+**/*.pyc
+**/*.pem
+**/*.key
+**/credentials*
