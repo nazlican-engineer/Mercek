@@ -1,71 +1,271 @@
-# Mercek
+# Mercek — Çalışan Ayrılma Analizi
 
-Güncel kapsam ve tasarım: [Proje bağlamı](PROJE_BAGLAMI.md) · [Kapsam ve renk paleti PDF’si](docs/kalan_giden_proje_kapsami_ve_renkler.pdf).
+**Ham çalışan kayıtlarından, sorgulanabilir bir veri ambarına ve etkileşimli bir analiz uygulamasına.**
 
-Çalışan ayrılmalarını yıl, departman, mağaza ve kayıtlı ayrılma sebebine göre inceleyen veri analizi ve raporlama projesi.
+Mercek; çalışanların **ne zaman, hangi departmandan, hangi mağazadan ve hangi kayıtlı sebeple ayrıldığını** incelemek için geliştirdiğim bir veri analizi projesi. Çalışma, veriyi tanıma ve temizleme ile başladı; SAP tarzı kaynak tablolar, DuckDB veri ambarı, FastAPI ve React arayüzüyle tamamlandı.
 
-**Durum:** Veri analizi, SAP tarzı kaynak tablolar ve DuckDB veri ambarı hazır. FastAPI ve React ile Nabız, Veda defteri ve Karşılaştırmalar sayfaları yerelde çalışıyor. Tarih ve grup filtreleri, etiketli grafikler, CSV indirme ve açık/koyu tema mevcut. Ayrılma tahmini ve yapay zekâ bu sürümün kapsamında değil.
+**Python · Pandas · SQL · DuckDB · FastAPI · React · Vite**
 
-## Veri
+> Veri seti sentetiktir. Uygulama geçmiş kayıtları inceler; gerçek çalışanlar hakkında bilgi veya geleceğe yönelik ayrılma tahmini sunmaz. Web uygulaması yerelde çalışır; canlı yayın ve Docker henüz hazırlanmadı.
 
-AIHR Employee Churn eğitiminde kullanılan MFG10YearTerminationData verisi sentetiktir; gerçek çalışan verisi değildir. Ham veri 49.653 satır ve 18 sütundan oluşur; 2006–2015 arasında 6.284 benzersiz çalışan içerir. Kaydedilmiş 1.485 ayrılmanın 885'i emeklilik, 385'i istifa, 215'i işten çıkarılmadır.
+![Mercek Nabız sayfası: özet sayılar, yıllık eğilim ve ayrılma grafikleri](docs/screenshots/nabiz.png)
 
-Aynı çalışan farklı yıllarda tekrar bulunur. Çalışan sayısı ile kayıt sayısı aynı değildir. Çalışan adları, maaş, mesai ve memnuniyet bilgisi yoktur.
+## Projede hangi soruları araştırdım?
 
-Kaynak: [AIHR Employee Churn tutorial](https://www.aihr.com/blog/tutorial-people-analytics-r-employee-churn/). İndirme ve temizlik notları: [kaynak açıklaması](data/raw/SOURCE.md), [analiz bulguları](ANALIZ_NOTLARI.md).
+- Veri setinde kaç kayıt ve kaç farklı çalışan var? Bir satır tam olarak neyi temsil ediyor?
+- Ayrılmalar yıllara, departmanlara, mağazalara ve sebeplere göre nasıl dağılıyor?
+- İstifa, emeklilik ve işten çıkarılma gruplarının yaş ve kıdemleri nasıl farklılaşıyor?
+- Boş hücre olmaması gerçekten eksiksiz veri anlamına geliyor mu?
+- Tekrar gibi görünen kayıtlar, işaret tarihler ve tarih çelişkileri nasıl ele alınmalı?
+- Bu bulgular, hesap kuralları açık bir web uygulamasına nasıl aktarılabilir?
 
-## Mevcut akış
+## Veri kaynağı ve kayıtların anlamı
+
+**Veri seti:** `MFG10YearTerminationData.csv`
+
+**Kaynak:** Lyndon Sundmark’ın [AIHR — Employee Churn / People Analytics Using R](https://www.aihr.com/blog/tutorial-people-analytics-r-employee-churn/) eğitimi. [Kaynak veri arşivi](https://www.aihr.com/wp-content/uploads/2016/09/Datasets-Tutorial-People-Analytics.zip) CSV ve R Markdown açıklamasını içerir.
+
+Kaynak, her yılın sonunda aktif olan çalışanların kayıtlarını yıl içinde gerçekleşen ayrılmalarla bir araya getirir. Bu yüzden **her satır farklı bir kişi değildir**: aynı çalışanın farklı yıllarda yaşı, kıdemi ve organizasyon bilgileri değişebilir. Ayrılma olayları `STATUS = TERMINATED` kayıtlarından alınır.
+
+| Veri özeti | Değer |
+| --- | ---: |
+| Dönem | 2006–2015 |
+| Ham kayıt | 49.653 |
+| Ham sütun | 18 |
+| Benzersiz çalışan | 6.284 |
+| Departman | 21 |
+| ACTIVE kaydı | 48.168 |
+| TERMINATED kaydı / benzersiz ayrılan çalışan | 1.485 |
+| Dönemde ayrılma kaydı bulunmayan çalışan | 4.799 |
+
+**4.799 kişi için bugün hâlâ çalışıyorlar denilemez.** Yalnızca veri döneminde ayrılma kayıtları yoktur. Çalışan isimleri, maaş, mesai, memnuniyet ve performans alanları veride bulunmaz.
+
+İndirme ve kaynak ayrıntıları: [SOURCE.md](data/raw/SOURCE.md). Kaynak veri için ayrıca bir lisans doğrulaması yapılmadı; açık lisans varsayılmıyor.
+
+<details>
+<summary><strong>18 sütunun açıklaması</strong></summary>
+
+| Sütun | Anlamı |
+| --- | --- |
+| `EmployeeID` | Çalışan kimliği; aynı kişi farklı yıllarda bulunabilir |
+| `recorddate_key` | Kaydın temsil ettiği tarih; sisteme yazılma anını kanıtlamaz |
+| `birthdate_key` | Doğum tarihi |
+| `orighiredate_key` | İlk işe giriş tarihi |
+| `terminationdate_key` | Ayrılma tarihi; ham veride işaret değerleri içerir |
+| `age` | İlgili kayıttaki yaş |
+| `length_of_service` | İlgili kayıttaki kıdem, tam yıl |
+| `city_name` | Kayıttaki şehir; ikamet adresi olduğu varsayılmaz |
+| `department_name` | Departman |
+| `job_title` | İş unvanı |
+| `store_name` | Mağaza/birim numarası; mağazanın açık adı değildir |
+| `gender_short`, `gender_full` | Cinsiyetin kısa kodu ve açık yazımı |
+| `termreason_desc` | Kayıtlı ayrılma sebebi |
+| `termtype_desc` | Gönüllü / gönülsüz ayrılma türü |
+| `STATUS_YEAR` | Kaydın ait olduğu yıl |
+| `STATUS` | İlgili yıldaki ACTIVE / TERMINATED durumu |
+| `BUSINESS_UNIT` | STORES / HEADOFFICE ayrımı |
+
+</details>
+
+## Analizden elde ettiğim sonuçlar
+
+### 1. Ayrılma sebeplerinde emeklilik öne çıkıyor
+
+| Kayıtlı sebep | Ayrılan çalışan | Ayrılanlar içindeki pay |
+| --- | ---: | ---: |
+| Emeklilik — Retirement | 885 | %59,60 |
+| İstifa — Resignation | 385 | %25,93 |
+| İşten çıkarılma — Layoff | 215 | %14,48 |
+| **Toplam** | **1.485** | **%100** |
+
+Yuvarlama nedeniyle kategori yüzdelerinin toplamı %100’den küçük bir fark gösterebilir. Emeklilik ve istifa kaynakta `Voluntary`, işten çıkarılma `Involuntary` olarak sınıflanır. Gönüllü ayrılma toplamı 1.270, gönülsüz ayrılma toplamı 215’tir.
+
+### 2. En fazla ayrılma 2014’te gerçekleşmiş
+
+| Yıl | Ayrılan çalışan | Yıl | Ayrılan çalışan |
+| --- | ---: | --- | ---: |
+| 2006 | 134 | 2011 | 110 |
+| 2007 | 162 | 2012 | 130 |
+| 2008 | 164 | 2013 | 105 |
+| 2009 | 142 | **2014** | **253** |
+| 2010 | 123 | 2015 | 162 |
+
+2014’teki 253 ayrılmanın 142’si işten çıkarılma, 56’sı emeklilik ve 55’i istifadır. İşten çıkarılmalar veri setinde 2014 ve 2015 yıllarında görülür. Bu dağılım tek başına şirket kararı veya mağaza kapanışı hakkında kesin bir neden göstermez.
+
+### 3. Departman büyüklüğü ile ayrılma sayısını ayrı değerlendirmek gerekiyor
+
+| Departman | Ayrılan çalışan |
+| --- | ---: |
+| Meats | 377 |
+| Produce | 353 |
+| Customer Service | 262 |
+| Dairy | 191 |
+| Bakery | 112 |
+| Processed Foods | 90 |
+
+İlk üç departman 992 ayrılmayla toplamın yaklaşık **%66,80**’ini oluşturur. Büyük ekiplerde ayrılan kişi sayısı da yüksek olabilir; bu yüzden arayüzde kişi sayısı ile çalışan sayısına göre ayrılma payı ayrı sunulur. Bazı küçük gruplarda görülen %100, seçilen dönemde gözlenen çalışanların tamamında ayrılma kaydı bulunmasıdır; güncel veya gelecekteki risk değildir.
+
+### 4. İstifa ve emeklilik gruplarının yaş ve kıdemleri farklı
+
+| Ayrılma sebebi | Ortalama yaş | Ortalama kıdem (yıl) |
+| --- | ---: | ---: |
+| İşten çıkarılma | 40,80 | 11,95 |
+| İstifa | 30,10 | 4,64 |
+| Emeklilik | 63,34 | 14,15 |
+
+İstifa edenlerin 163’ünde kıdem 0 veya 1 tam yıldır: 385 istifanın yaklaşık **%42,3**’ü. Bu sonuç, yeni çalışanların istifa olasılığını ölçmez; bunun için o kıdemlerdeki çalışanların tamamı ve gözlem süreleri gerekir.
+
+Tüm kayıtlar üzerinde yaş aralığı **19–65**, kıdem aralığı **0–26 yıl**. Yaş ve kıdem kutu grafiklerinde standart 1,5 × IQR ölçütüne göre aykırı değer bulunmadı; bu gerekçeyle kayıt silinmedi. Aynı çalışan farklı yıllarda tekrarlandığından bu özetler benzersiz kişi ortalamaları değildir.
+
+<details>
+<summary><strong>Notebook’taki yaş ve kıdem kutu grafikleri</strong></summary>
+
+| Yaş dağılımı | Kıdem dağılımı |
+| --- | --- |
+| ![Tüm kayıtlarda yaş dağılımı kutu grafiği](docs/screenshots/yas-kutu-grafigi.png) | ![Tüm kayıtlarda kıdem dağılımı kutu grafiği](docs/screenshots/kidem-kutu-grafigi.png) |
+
+</details>
+
+### 5. Aynı mağaza kodu her zaman aynı iş birimi demek değil
+
+`store_name = 35` iş birimi ayrılmadan sayıldığında 207 ayrılan çalışan içeriyor. **STORES** filtresiyle sayı **138** oluyor; diğer 69 kişi merkez ofis kayıtlarında. Bu fark iki kez saymadan değil, farklı iş birimlerini aynı kod altında toplamaktan kaynaklanıyor.
+
+Şehir analizinde `New Westminster` ve `New Westminister` yazımları bulundu. Bunları birleştirmek için yeterli veri kanıtı olmadığı için iki kategori korundu.
+
+Cinsiyet analizinde kadınların dönemlik ayrılma payı %27,91, erkeklerin %18,96; istifa payları ise sırasıyla %6,44 ve %5,79 bulundu. Sayısal farkın büyük kısmı emeklilik kayıtlarında görülüyor. Bu ilişkiler nedensellik veya istatistiksel anlamlılık kanıtı olarak sunulmaz.
+
+Daha ayrıntılı ilk inceleme ve karar geçmişi: [Analiz notları](ANALIZ_NOTLARI.md). Bu belge ilk aşamadaki planları da içerir; uygulanan son durum aşağıdaki temizlik tablosunda ve kodda görülebilir.
+
+## Veri kalitesi: neleri değiştirdim, neleri korudum?
+
+İlk `isna()` kontrolünde boş hücre çıkmadı. Ancak bu, verinin eksiksiz veya hatasız olduğu anlamına gelmiyordu.
+
+| Bulgu | Uygulanan karar |
+| --- | --- |
+| 42.450 satırda `1900-01-01` ayrılma tarihi | Gerçek ayrılma tarihi olarak kullanılmadı; temiz dosyada boş değere çevrildi |
+| Tarih sütunlarının metin olması | Dört tarih sütunu hazırlık sırasında tarihe çevrildi; CSV’de tarih metni olarak saklandı |
+| `Resignaton` yazımı | Temiz dosyada `Resignation` olarak düzeltildi |
+| Aynı çalışan ve yılda ACTIVE / TERMINATED bulunan 5 ek kayıt | İki kayıt da korundu; otomatik silinmedi |
+| Kayıt tarihi işe girişten önce görünen 2 satır | Tarihler değiştirilmeden `date_conflict_flag` ile işaretlendi |
+| `New Westminster` / `New Westminister` | Yazımlar birleştirilmedi |
+| Sebep ve tür alanlarında `Not Applicable` | Korundu; doğrudan bugünkü aktiflik göstergesi sayılmadı |
+| Geçmiş ACTIVE satırlarda sonraki ayrılma bilgileri | Ayrılma sayıları yalnızca gerçek TERMINATED olaylarından hesaplandı |
+
+**Ham dosya değiştirilmedi.** Temiz çıktı **49.653 satır ve 19 sütun** içeriyor; çalışan sayısı yine **6.284**. Ek sütun tarih kontrol işaretidir.
+
+İşaretlenen iki çalışanın kayıt tarihleri işe girişlerinden 9 ve 26 gün önce görünüyor. Bütün ayrılma kayıtlarının tarihinin ayın ilk günü olması bir kayıt kuralına işaret edebilir; kesin veri hatası varsayılıp satırlar silinmedi. `recorddate_key` ile gerçek ayrılma tarihinin farklı amaçları olduğu dikkate alındı.
+
+## Uygulamada neler var?
+
+### Nabız — genel durum
+
+Dönem filtresi, benzersiz çalışan ve ayrılma sayıları, yıllık alan grafiği, yıllara göre ayrılma sebepleri, sebep dağılımı halkası ve ayrılma anındaki kıdem grafiği. İki zaman grafiği on yıllık bağlamı korurken diğer özetler seçilen döneme uyar. Grafiklerden ilgili ayrılma kayıtlarına geçilebilir.
+
+### Veda defteri — kayıtların ayrıntısı
+
+Yıl, tarih aralığı, departman, mağaza, şehir ve sebep filtreleri; çalışan numarasıyla arama, sayfalama ve filtreli CSV indirme. CSV yalnızca ekranda görünen sayfayı değil, filtrelere ve aramaya uyan bütün sonuçları içerir.
+
+![Mercek Veda defteri: filtrelenebilir ayrılma kayıtları](docs/screenshots/veda-defteri.png)
+
+### Karşılaştırmalar — grupları birlikte değerlendirme
+
+Departman, şehir, cinsiyet ve kıdem grupları kişi sayısı veya ayrılma payıyla karşılaştırılabilir. **Mağaza karşılaştırması ayrı ve sürekli görünen bir bölümde** yer alır. Her iki bölüm aynı dönem filtresini kullanır. Mağaza analizinde yalnızca STORES birimi bulunur.
+
+![Mercek Karşılaştırmalar: departman ve mağaza analizleri](docs/screenshots/mercek.png)
+
+### Mercek Veri Asistanı — kayıtlı verilere soru sorma
+
+Her sayfada sağ alttaki pembe ikon sohbet panelini açar. Asistan, hazır soru türleri ve filtre eşleştirmeleriyle DuckDB verisini sorgular; model veya dış yapay zekâ servisi kullanmaz. Aynı sorunun farklı yazımlarını destekler, fakat her serbest cümleyi anlayan bir dil modeli değildir.
+
+Örnek sorular:
+
+- “2014 yılında kaç çalışan ayrıldı?”
+- “2014’te ayrılanların mağaza bilgilerini getir.”
+- “2015’te Meats departmanından istifa edenleri listele.”
+- “35 numaralı mağazadan kimler ayrıldı?”
+- “Ocak–Mart 2014 arasında kaç kişi ayrıldı?”
+- “2014 ve 2015 ayrılma sayılarını karşılaştır.”
+- “En çok istifa görülen beş departmanı göster.”
+- “3008 numaralı çalışanın ayrılma bilgisi nedir?”
+
+Cevaplarda uygulanan filtreler ve veri kaynağı görünür; listeler tablo olarak sunulur. Merkez ofis kayıtları mağaza diye etiketlenmez. Desteklenmeyen veya belirsiz sorularda açıklama istenir. Konuşma sayfalar arasında korunur; tarayıcı yenilenince sıfırlanır.
+
+![Mercek Veri Asistanı: yıl karşılaştırmasına verilen tablo cevabı](docs/screenshots/veri-asistani.png)
+
+Açık/koyu tema sistem tercihine uyar. [Koyu tema görünümü](docs/screenshots/pano-koyu.png).
+
+## Sayıları nasıl hesaplıyorum?
+
+- **Çalışan sayısı:** benzersiz çalışan kimliği. Satır sayısı kişi sayısı değildir.
+- **Ayrılan çalışan:** `STATUS = TERMINATED` / ambarda `left_flag = 1` olan olaylardaki benzersiz çalışan.
+- **Dönemlik ayrılma payı:** ayrılan benzersiz çalışan / gözlenen benzersiz çalışan × 100. Tüm dönemde 1.485 / 6.284 ≈ **%23,63**.
+- **Yıllık pay:** ilgili yılda ayrılan benzersiz çalışan / o yıl gözlenen benzersiz çalışan × 100. Ortalama yıl başı/sonu personelle hesaplanan standart devir oranı değildir.
+- **Sebep yüzdeleri:** ilgili sebeple ayrılanlar / seçilen dönemde ayrılanlar. Payda bütün çalışanlar değildir.
+- **Grup karşılaştırması:** her çalışanın seçilen dönemdeki son gözlemi kullanılır. Aynı çalışan-yıldaki eşleşmede ayrılma kaydı önceliklidir. Böylece kişi gruplara bir kez atanır.
+- **Tarih filtreleri:** gerçek `termination_date` üzerinden uygulanır; kayıt tarihiyle karıştırılmaz.
+
+Keşif notebook’unda bazı grup paydaları “o grupta herhangi bir kaydı olan çalışanlar” üzerinden incelenmiştir. Uygulamanın son gözlem yaklaşımı farklıdır; özellikle grup değiştiren çalışanlarda iki yöntemin sonuçları aynı olmak zorunda değildir.
+
+## Teknik yapı
+
+```mermaid
+flowchart LR
+    A[Ham CSV] --> B[Pandas: inceleme ve temizlik]
+    B --> C[SAP tarzı CSV tabloları]
+    B --> D[Yıllık çalışan metrikleri]
+    C --> E[DuckDB veri ambarı]
+    D --> E
+    E --> F[FastAPI]
+    F --> G[React analiz arayüzü]
+    F --> H[Kural tabanlı veri asistanı]
+    H --> G
+```
+
+| Katman | Kullanılan araç / çıktı |
+| --- | --- |
+| İnceleme ve görselleştirme | Pandas, NumPy, Matplotlib, Seaborn, Jupyter |
+| SAP tarzı hazırlık | PA0000 aksiyonlar, PA0001 organizasyon, PA0002 kişisel bilgiler |
+| Veri ambarı | DuckDB; ham tablolar, boyutlar ve `fact_employee_year` |
+| API | FastAPI; filtreli ve parametreli sorgular |
+| Arayüz | React, Vite, CSS ve SVG grafikler |
+| Veri asistanı | Python; soru türü / filtre eşleştirmesi, SQL ile okuma |
+| Kontroller | CSV ile sonuç karşılaştırmaları, unittest, tarayıcı kontrolleri |
+
+**Gerçek SAP sistemine bağlanılmadı.** PA tabloları, SAP alan adlarından esinlenen eğitim amaçlı CSV yapılarıdır. Yaş ve kıdem gibi zamanla değişen alanlar kişisel ana veri tablosuna sıkıştırılmadı; yıllık metriklerde tutuldu. Ambarda korunan beş çift kayıt nedeniyle çalışan × yıl tek başına benzersiz anahtar değildir; sorgularda bu durum dikkate alınır.
+
+<details>
+<summary><strong>Proje dosyaları ve inceleme sırası</strong></summary>
 
 ```text
-Ham CSV → temiz veri → SAP tarzı CSV tabloları → DuckDB veri ambarı → FastAPI → React
+backend/                 FastAPI ve veri asistanı
+frontend/                React uygulaması
+data/raw/                Ham CSV ve kaynak açıklaması
+data/processed/          Temiz CSV, SAP tarzı tablolar, DuckDB ambarı
+notebooks/
+  01_analiz.ipynb         Veri inceleme, kalite kontrolleri ve grafikler
+  02_sap_hazirlama.ipynb  SAP tarzı CSV tablolarını hazırlama
+  03_duckdb_ambar.ipynb   Veri ambarını oluşturma ve SQL sorguları
+docs/screenshots/        Uygulama ve analiz görselleri
+tests/                   Veri asistanı kontrolleri
+ANALIZ_NOTLARI.md         İlk inceleme bulguları ve karar geçmişi
 ```
 
-Notebook'ları şu sırayla inceleyin:
+Önce [01_analiz](notebooks/01_analiz.ipynb), sonra [02_sap_hazirlama](notebooks/02_sap_hazirlama.ipynb), ardından [03_duckdb_ambar](notebooks/03_duckdb_ambar.ipynb) incelenebilir.
 
-1. [01_analiz.ipynb](notebooks/01_analiz.ipynb): veriyi tanıma, kalite kontrolleri ve grafikler.
-2. [02_sap_hazirlama.ipynb](notebooks/02_sap_hazirlama.ipynb): PA0000, PA0001, PA0002 ve yıllık metrikler.
-3. [03_duckdb_ambar.ipynb](notebooks/03_duckdb_ambar.ipynb): kaynak tablolar, boyutlar ve çalışan kayıtları.
+</details>
 
-SAP alan adlarından esinlenen CSV tabloları kullanılmıştır; gerçek SAP sistemine bağlanılmamıştır.
+## Yerelde çalıştırma
 
-## Yerelde inceleme
+Python ve Node.js/npm kurulmuş olmalıdır. Önce projeyi indirip ana klasöründe bir terminal aç.
 
-Python ortamına analiz araçlarını kurun:
-
-```powershell
-python -m pip install pandas numpy matplotlib seaborn duckdb jupyter ipykernel
-```
-
-VS Code'da proje klasörünü açıp notebook için bu Python ortamını seçin. Notebook'ları `notebooks` klasöründe çalıştırın; göreli `../data/` yolları bu klasöre göredir. Jupyter ile açmak için:
-
-```powershell
-python -m notebook --notebook-dir=notebooks
-```
-
-Hazırlanmış dosyalar `data/processed/` içinde; ambar `warehouse.duckdb` dosyasıdır. Ambar notebook'undaki `CREATE TABLE IF NOT EXISTS`, mevcut tabloları yeniden yüklemez. Kaynak veriler değişirse mevcut ambarın yenilenmesi ayrıca ele alınmalıdır.
-
-## Web uygulaması ve sonraki adımlar
-
-PDF’nin pitaya renk paleti ve tek sütun düzeniyle üç sayfa oluşturuldu:
-
-- **Nabız:** Genel sayılar ve yıllık/departman bazında özetler.
-- **Veda defteri:** Yıl, tarih aralığı, mağaza, şehir, departman ve sebep filtreleri; çalışan numarası arama, sayfalama ve filtreli CSV indirme.
-- **Karşılaştırmalar:** Departman, mağaza, şehir, cinsiyet ve kıdem gruplarını kişi sayısı veya ayrılma yüzdesiyle karşılaştırma.
-
-Yıl grafiğindeki bir nokta veya altındaki yıl bağlantısı ilgili yılın kayıtlarını, sebep satırındaki ok ilgili sebebin kayıtlarını açar. Filtreler kayıtlı veriden parametreli SQL ile hesaplanır. Serbest doğal dil sorgusu ve tahmin yoktur. Uygulama yereldir; yayımlanmamıştır.
-
-
-
-## API ve arayüzü yerelde çalıştırma
-
-Proje ana klasöründeki terminalde:
+**1. API’yi başlat:**
 
 ```powershell
 python -m pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
-Ayrı bir terminalde:
+**2. Ayrı bir terminalde arayüzü başlat:**
 
 ```powershell
 cd frontend
@@ -73,61 +273,50 @@ npm ci
 npm run dev
 ```
 
-API: `http://127.0.0.1:8000`. API test ekranı: `http://127.0.0.1:8000/docs`. Arayüz: `http://localhost:5173` (terminalde gösterilen adresi kontrol edin). Geliştirme CORS izni localhost ve 127.0.0.1 için 5173 portuna tanımlı. İki sunucu da açık kalmalıdır.
+- Uygulama: `http://localhost:5173`
+- API: `http://127.0.0.1:8000`
+- Etkileşimli API dokümanı: `http://127.0.0.1:8000/docs`
 
+İki terminal de açık kalmalıdır. Hazırlanmış ambar `data/processed/warehouse.duckdb` içindedir. Vite, `/api` isteklerini yerel API’ye iletir. Farklı API adresi kullanılacaksa `VITE_API_URL` ve ilgili CORS ayarları birlikte düzenlenmelidir.
 
-## Arayüz ve ölçümler
+**Notebook’ları çalıştırmak veya veriyi yeniden hazırlamak için:**
 
-- Açık/koyu tema sistem tercihine uyar. Grafik değerleri doğrudan etiketlidir.
-- Nabız özetleri tüm veri dönemine aittir; 6.284 benzersiz çalışan, 1.485 ayrılma ve %23,63 dönem payı. Bu yıllık devir oranı değildir.
-- Karşılaştırmalar sayfasında her çalışan seçilen yılın veya tüm dönemin son kaydıyla bir kez gruplandırılır. Kıdem bu kayda aittir. Yıl seçilirse payda o yılda gözlenen benzersiz çalışanlardır; yıl başı/sonu ortalama personel hesabı kullanılmaz.
-- Mağaza analizlerinde yalnızca STORES birimi kullanılır. Şehir yazımları korunmuştur.
-- CSV, listede seçilen filtreler ve çalışan numarası aramasına uyan bütün sonuçları indirir; sadece görünen sayfayı indirmez.
-- `/api/departures` yıl gönderilmezse bütün dönemi getirir. Opsiyonel parametreler: `year`, `department`, `store`, `city`, `reason`, `start_date`, `end_date`.
-- Vite geliştirme sunucusu `/api` isteklerini `127.0.0.1:8000` adresine iletir. API farklı adreste çalışırsa arayüzde `VITE_API_URL` ayarlanabilir; ilgili CORS izni de güncellenmelidir.
+```powershell
+python -m pip install pandas numpy matplotlib seaborn duckdb notebook ipykernel
+python -m notebook --notebook-dir=notebooks
+```
 
-Derleme: `cd frontend` ardından `npm run build`. Canlı yayın ve Docker henüz hazırlanmadı.
+Notebook’lar `notebooks/` çalışma klasörünü kullanır; `../data/` yolları buna göredir. CSV dosyaları tarih veri tipini saklamaz; yeniden okunduğunda tarih dönüşümü gerekebilir. Ambar notebook’undaki `CREATE TABLE IF NOT EXISTS` mevcut tabloları yenilemez; kaynak değişirse ambarın ayrıca yeniden oluşturulması gerekir.
 
-## Ekran görüntüleri
+## Doğrulama
 
-- [Nabız](docs/screenshots/nabiz.png)
-- [Yıllık alan grafiği ve tablosu](docs/screenshots/yillik-alan-grafigi.png)
-- [Veda defteri](docs/screenshots/veda-defteri.png)
-- [Karşılaştırmalar](docs/screenshots/mercek.png)
+Veri asistanı testleri için Pandas’ın da kurulu olması gerekir:
 
-Yerel kontroller: API toplamları ve filtreleri kaynak CSV ile karşılaştırıldı. Gerçek tarayıcıda yıl grafiğinden geçiş, filtreler, CSV indirme, sayfalama, boş sonuç, açık/koyu tema, API hata/yeniden deneme ve 320 piksel ekran genişliği kontrol edildi. React üretim derlemesi başarılı.
+```powershell
+python -m pip install pandas
+python -m unittest discover -s tests -v
+```
 
+Yedi test grubu; farklı soru yazımlarını, birleşik filtreleri, tarih aralıklarını, mağaza–merkez ofis ayrımını, kıdemi, sıralamaları ve desteklenmeyen soruları kontrol eder. Beklenen sonuçlar temiz CSV’den hesaplanır.
 
-### Yıllık alan grafiği
+Arayüz derlemesi:
 
-Nabız'daki alan grafiği başlangıçta yıllık ayrılma payını gösterir. “Oran (%) / Ayrılan kişi” seçimi grafiğin ölçüsünü değiştirir. Aynı anda farklı ölçekte iki dolu alan çizilmez. Nokta ayrıntıları toplam çalışanı, ayrılanı ve yüzdeyi birlikte gösterir; grafik altındaki tabloda on yılın bütün değerleri kalıcı olarak görünür.
+```powershell
+cd frontend
+npm run build
+```
 
-`GET /api/by-year` her yıl için `yil`, `toplam_calisan`, `ayrilan_calisan`, `ayrilma_yuzdesi` döndürür. Payda, o yıl herhangi bir kaydı bulunan benzersiz çalışanlardır; yıllık satır toplamı kullanılmaz. Ayrılmalar gerçek ayrılma tarihinin yılına göre sayılır. Bu, yıl başı/sonu ortalama çalışanla hesaplanan devir oranı değildir.
+Geliştirme sırasında API toplamları CSV ile karşılaştırıldı; filtreler, kayıt bağlantıları, CSV indirme, boş sonuçlar, sohbet tabloları, konuşmanın sayfalar arasında korunması, mobil görünüm ve açık/koyu tema tarayıcıda kontrol edildi.
 
-### Grafik ağırlıklı analiz panosu
+## Bu projede öğrendiklerim
 
-Nabız altı grafik içerir: yıllık alan, yıllara göre ayrılma sebepleri (yığılmış sütun), sebep dağılımı (halka), departmanlar, ilk 10 mağaza ve ayrılma anındaki kıdem. Ortak yıl filtresi özet sayıları ve dönem grafiklerini günceller; iki yıllık eğilim grafiği bütün yılları korur. Departmanlar kişi sayısı veya ayrılma payına göre sıralanabilir. Halka grafiğin sebep satırları filtreli kayıt listesini açar. Mağaza grafiği merkez ofisi dışarıda bırakır. Yeni grafikler `/api/departures`, `/api/by-year` ve `/api/breakdown` verilerini kullanır; ek grafik kütüphanesi kurulmadı.
+- Veriyi kullanmadan önce **bir satırın neyi temsil ettiğini** tanımlamak.
+- Boş hücre ile `1900-01-01` gibi **işaret değerini** ayırmak.
+- Şüpheli kaydı hemen silmek yerine **incelemek, işaretlemek ve kararını belgelemek**.
+- **Kayıt, kişi ve olay sayısını** karıştırmamak; bir oranın paydasını açıklamak.
+- Çok sayıda ayrılma görülen grubu, doğrudan yüksek riskli grup diye yorumlamamak.
+- Çalışan geçmişini koruyarak kaynak tabloları ve sorgulanabilir bir **veri ambarı** kurmak.
+- Python analizlerini **SQL → API → React** akışına taşımak.
+- Sonuçları kaynak veriye karşı kontrol etmek ve soru asistanının sınırlarını açıkça belirtmek.
 
-[Güncel Nabız panosu](docs/screenshots/nabiz.png) · [Koyu tema](docs/screenshots/pano-koyu.png).
-
-
-## Sayfa düzeni güncellemesi
-
-Departman ve ilk 10 mağaza grafikleri Nabız’dan Karşılaştırmalar sayfasına taşındı. İkisi de bu sayfanın dönem filtresine uyar. Nabız’da dört grafik bulunur: yıllık eğilim, yıllık ayrılma sebepleri, sebep dağılımı ve ayrılma anındaki kıdem. Karşılaştırmalar sayfasındaki ayrıntılı grup seçimi ve kişi/yüzde analizi korunur.
-
-
-Son düzenleme: Ayrı ilk 10 mağaza grafiği kaldırıldı. Mağaza analizi Karşılaştırmalar sayfasındaki Mağaza seçeneğinden yapılır; kişi sayısı/yüzde ve tüm grupları gösterme seçenekleri korunur.
-
-
-Karşılaştırmalar sayfasındaki tekrarlayan “Hangi departmanlarda?” bölümü kaldırıldı. Departman ve mağaza dahil tüm grup analizleri, üstteki grup seçimiyle değişen tek grafik alanında sunulur.
-
-
-## Mercek Veri Asistanı
-
-Bütün sayfalarda sağ alttaki pembe ikonla açılan sohbet paneli bulunur. Konuşma sayfa değişince ve panel kapatılıp açılınca korunur; sayfa yenilenince sıfırlanır. `GET /api/assistant?question=...` sorgusu `backend/assistant.py` içindeki hazır soru eşleştirmesini kullanır. Model veya dış yapay zekâ servisi kullanılmaz.
-
-Desteklenen soru türleri: ayrılma sayısı, çalışan listesi (mağaza/şehir/departman/kıdem dahil), ayrılma sebepleri, departman/mağaza/şehir sıralaması, yılların karşılaştırılması ve tek çalışan ayrılma kaydı. Yıl, açık tarih aralığı, aynı yıl içindeki ay aralığı, tek departman, tek şehir, mağaza numarası, ayrılma sebebi ve en fazla tam yıl kıdemi birlikte filtrelenebilir. Şehir ve departman adları verideki adlarla eşleştirilir; şehir yazım farkları birleştirilmez.
-
-Örnekler panelden seçilebilir. Sonuçta uygulanan filtreler açıkça gösterilir. Çalışan listelerinde merkez ofis mağaza diye etiketlenmez; mağaza sıralamalarında yalnızca STORES vardır. Tablolarda ilk 10 satır görünür, diğer satırlar 25’er eklenebilir. Tahmin, oran, cinsiyet filtresi ve belirsiz/uyumsuz sorularda kapsam açıklanır. Bu eşleştirme her serbest cümleyi anlayan bir dil modeli değildir.
-
-Kontrol: `python -m unittest discover -s tests -v`. Testler temiz CSV ile birleşik filtreleri, tarihleri, mağaza ayrımını, sıralamaları ve alternatif soru ifadelerini karşılaştırır.
+Projenin odağı veri analizi, veri kalitesi ve raporlamadır. Bulgular sentetik veri setine aittir; gerçek şirketlere doğrudan genellenmez.
