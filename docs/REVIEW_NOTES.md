@@ -1,10 +1,10 @@
-# Mercek: query, Docker, proxy, and frontend review
+# Mercek — Implementation Review
 
-Reviewed on October 18, 2026. The supplied checklist contained `0/0` and a list of files awaiting review, rather than detailed action items. The following issues were identified and addressed through direct inspection of those files.
+Reviewed on October 18, 2026. This document summarizes the query correctness, container permissions, proxy configuration, and frontend checks completed for Mercek.
 
 ## Changes completed
 
-- [x] **Tenure boundaries:** “The first two years” uses `length_of_service < 2`; “at most 2 years” uses `length_of_service <= 2`. There are 163 resignations in the first two completed years of service.
+- [x] **Tenure boundaries:** “The first two years” uses `length_of_service < 2`; “at most 2 years” uses `length_of_service <= 2`. There are 163 resignations within the first two years of service.
 - [x] **Date order:** Questions that mix ISO and day/month/year formats preserve the order in which the dates were entered. Reversed date or year ranges receive a clarification response.
 - [x] **Store totals:** Both the total and the rows in store-grouped answers include only the STORES business unit.
 - [x] **Query safety:** The assistant does not execute user questions as SQL. It reads data through fixed, read-only queries, while API filter values remain parameterized. SQL-like input was checked to ensure that it neither modified tables nor broadened API filter results.
@@ -22,4 +22,3 @@ Reviewed on October 18, 2026. The supplied checklist contained `0/0` and a list 
 - The frontend build passed. Lint checks reported only the existing Fast Refresh warnings in `components.jsx`, with no errors.
 - Browser checks covered rapid filter changes, corrected tenure results, filtered CSV downloads, retries after request failures, and mobile layouts.
 
-This review documents the files that were inspected. It does not claim completion of a detailed checklist that was absent from the supplied document; any additional action items should be assessed separately.

@@ -204,7 +204,7 @@ Responses show the filters applied and the data source, with lists presented as 
 
 <img src="docs/screenshots/veri-asistani.png" alt="Mercek Data Assistant comparing departure counts for 2014 and 2015" width="520" />
 
-The interface follows the system’s light or dark theme preference. [Dark theme preview](docs/screenshots/pano-koyu.png).
+The interface follows your system’s light or dark theme setting. [View the dark theme](docs/screenshots/pano-koyu.png).
 
 ## How the figures are calculated
 
@@ -355,4 +355,4 @@ During development, API totals were compared against the CSV. Browser checks cov
 
 The project focuses on data analysis, data quality, and reporting. Its findings describe a synthetic dataset and should not be generalized directly to real companies.
 
-A subsequent review corrected tenure boundaries, mixed date-format handling, and store totals in the assistant. CSV formula protection and request timeouts were added. Both Docker containers run as non-root users with read-only filesystems. Details are documented in the [review notes](docs/INCELEME_NOTLARI.md).
+For query validation, CSV export safeguards, request handling, and Docker runtime permissions, see the [implementation review](docs/REVIEW_NOTES.md).
